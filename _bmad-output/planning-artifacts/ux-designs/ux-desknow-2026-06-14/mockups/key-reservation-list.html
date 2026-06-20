@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeskNow — 예약현황</title>
+<style>
+/* Governing spine: EXPERIENCE.md → IA(예약현황 1급 진입), Component Patterns(인앱 배너=도래 리마인드·'다시 보지 않기'), Voice and Tone(취소 불가 6시간·카톡 공유), 시간·타임존 규칙(6시간 취소 마감·24h 도래 배너·이용 완료 판정), Key Flows UJ-1 Resolution·UJ-2 Resolution. DESIGN.md → 인앱 배너, Colors(destructive 취소·secondary 배너), Components(카드 플랫), Layout. */
+:root{
+  --primary:#FF8A1E; --primary-foreground:#3A2400; --secondary:#FFF0D6; --accent:#FFC24D;
+  --background:#FFFCF4; --card:#FFFFFF; --foreground:#28200F; --muted:#F4EDDF;
+  --muted-foreground:#7A6E55; --border:#F4E2C2; --destructive:#E03A2E; --success:#19A65A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#E9E6DC;font-family:"Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;display:flex;justify-content:center;align-items:flex-start;padding:24px;color:var(--foreground);}
+.phone{width:390px;height:844px;background:var(--background);border-radius:28px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;flex-shrink:0;}
+.pagehead{padding:8px 20px 12px;flex-shrink:0;}
+.pagehead h1{font-size:24px;font-weight:700;letter-spacing:-.01em;}
+
+/* in-app banner (도래 리마인드) */
+.banner{margin:0 16px 14px;background:var(--secondary);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;flex-shrink:0;}
+.banner .bi{font-size:18px;line-height:1.4;}
+.banner .bt{flex:1;font-size:13px;line-height:1.5;}
+.banner .bt b{font-weight:700;}
+.banner .dismiss{font-size:12px;color:var(--muted-foreground);text-decoration:underline;white-space:nowrap;align-self:center;}
+
+/* tabs 다가오는 / 지난 */
+.tabs{display:flex;gap:24px;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tabs button{background:none;border:none;font-family:inherit;font-size:15px;font-weight:600;color:var(--muted-foreground);padding:12px 0;position:relative;}
+.tabs button.on{color:var(--foreground);}
+.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;background:var(--primary);border-radius:9999px;}
+
+.list{flex:1;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+/* reservation card */
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.rcard .top{display:flex;align-items:flex-start;gap:10px;}
+.rcard .thumb{width:50px;height:50px;border-radius:8px;background:linear-gradient(135deg,var(--secondary),var(--accent));flex-shrink:0;}
+.rcard .head{flex:1;min-width:0;}
+.rcard .head .t{font-size:16px;font-weight:600;}
+.rcard .head .m{font-size:12px;color:var(--muted-foreground);margin-top:3px;}
+.rcard .when{font-size:14px;font-weight:600;margin-top:10px;}
+.rcard .when small{font-weight:400;color:var(--muted-foreground);}
+
+/* status pills */
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:9999px;padding:4px 10px;font-size:11px;font-weight:600;flex-shrink:0;}
+.pill.upcoming{background:var(--success);color:#fff;}
+.pill.done{background:var(--muted);color:var(--muted-foreground);}
+.pill.cancelled{background:var(--muted);color:var(--muted-foreground);}
+.pill.rejected{background:#FBE3E1;color:var(--destructive);}
+
+/* action buttons */
+.actions{display:flex;gap:8px;margin-top:14px;}
+.btn{flex:1;height:42px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);background:var(--card);color:var(--foreground);}
+.btn.kakao{background:#FEE500;border-color:#FEE500;color:#3A2400;}
+.btn.cancel{color:var(--destructive);border-color:var(--border);}
+.btn.disabled{background:var(--muted);border-color:var(--muted);color:#BCB29C;}
+
+.note{margin-top:10px;font-size:12px;color:var(--muted-foreground);background:var(--muted);border-radius:8px;padding:9px 11px;line-height:1.5;}
+
+/* bottom tab nav */
+.tabbar{flex-shrink:0;border-top:1px solid var(--border);display:flex;background:var(--card);padding:8px 0 18px;}
+.tabbar .item{flex:1;text-align:center;font-size:11px;color:var(--muted-foreground);display:flex;flex-direction:column;align-items:center;gap:3px;}
+.tabbar .item .ic{font-size:20px;}
+.tabbar .item.on{color:var(--primary);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span></span><span>●●● ▼ ■</span></div>
+  <div class="pagehead"><h1>예약현황</h1></div>
+
+  <!-- 도래 리마인드 인앱 배너 -->
+  <div class="banner">
+    <span class="bi">⏰</span>
+    <span class="bt"><b>강남 스터디라운지</b> 예약이 곧 다가와요. 내일 14:00–17:00에 만나요!</span>
+    <span class="dismiss">다시 보지 않기</span>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="on">다가오는</button>
+    <button>지난</button>
+  </div>
+
+  <div class="list">
+    <!-- upcoming: 카톡 공유 + 취소 가능 -->
+    <div class="rcard">
+      <div class="top">
+        <div class="thumb"></div>
+        <div class="head">
+          <div class="t">강남 스터디라운지</div>
+          <div class="m">강남구 역삼동 · 8,000원/시간</div>
+        </div>
+        <span class="pill upcoming">예약 확정</span>
+      </div>
+      <div class="when">6월 15일 (일) 14:00–17:00 <small>· 3시간 · 24,000원</small></div>
+      <div class="actions">
+        <button class="btn kakao">💬 카카오톡 공유</button>
+        <button class="btn cancel">취소</button>
+      </div>
+    </div>
+
+    <!-- upcoming: 6시간 미만 → 취소 불가 disabled -->
+    <div class="rcard">
+      <div class="top">
+        <div class="thumb"></div>
+        <div class="head">
+          <div class="t">역삼 포커스룸</div>
+          <div class="m">강남구 역삼동 · 8,000원/시간</div>
+        </div>
+        <span class="pill upcoming">예약 확정</span>
+      </div>
+      <div class="when">6월 14일 (토) 19:00–21:00 <small>· 2시간 · 16,000원</small></div>
+      <div class="actions">
+        <button class="btn kakao">💬 카카오톡 공유</button>
+        <button class="btn disabled">취소</button>
+      </div>
+      <div class="note">이제 6시간이 안 남아서 취소가 어려워요.</div>
+    </div>
+  </div>
+
+  <!-- 하단 탭 -->
+  <div class="tabbar">
+    <div class="item"><span class="ic">🗺️</span>찾기</div>
+    <div class="item on"><span class="ic">🗓️</span>예약현황</div>
+    <div class="item"><span class="ic">♡</span>즐겨찾기</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,4516 @@
+{
+  "components": {
+    "schemas": {
+      "AdminAccountItem": {
+        "description": "운영 계정목록 항목(booker·provider). 운영자라 실 이메일·실 역할·실 활성여부를 노출한다.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "AdminAccountItem",
+        "type": "object"
+      },
+      "AdminAccountListResponse": {
+        "description": "운영 계정목록 응답(페이지네이션). 8.2 비활성 액션 화면이 이 위에 컬럼/버튼을 더한다.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminAccountItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "AdminAccountListResponse",
+        "type": "object"
+      },
+      "AdminIngestDocument": {
+        "description": "인제스트 지식베이스 문서 1건 표현 — 운영자가 실행 전에도 현재 적재 현황을 본다.\n\ncorpus 디스크 목록(``docs_corpus/``)과 DB 적재분(``document_chunks``)을 병합해 문서별\n상태를 산출한다(``status``). 인제스트는 멱등 reconcile이라 이 상태가 곧 \"다음 실행이 무엇을\n할지\"를 미리 보여준다 — pending은 적재 예정, orphan은 정리(삭제) 예정, ingested는 스킵.",
+        "properties": {
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "source_path": {
+            "title": "Source Path",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ingested",
+              "stale",
+              "pending",
+              "orphan"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_path",
+          "chunk_count",
+          "status"
+        ],
+        "title": "AdminIngestDocument",
+        "type": "object"
+      },
+      "AdminIngestDocumentList": {
+        "description": "인제스트 문서 목록 응답 — ``GET /admin/ingest/documents``.\n\n페이지네이션 없는 전량 반환이다(corpus 문서는 운영자가 직접 관리하는 소수 — 계정/예약\n목록과 달리 비대 위험이 낮음). 정렬은 service가 ``source_path`` 기준 결정적으로 보장한다.",
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/AdminIngestDocument"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "documents",
+          "total"
+        ],
+        "title": "AdminIngestDocumentList",
+        "type": "object"
+      },
+      "AdminIngestFailure": {
+        "description": "인제스트 부분 실패 1건(경로 + 사유) — Story 8.4, AC3.\n\n``IngestReport.failed``의 ``(경로, 사유)`` 튜플을 명시 와이어 객체로 노출한다. 튜플은 JSON\n배열로 직렬화돼 SDK 타입이 ``[string, string]``으로 모호해지므로 객체로 풀어 ``path``/``reason``\n필드를 분명히 한다. 문서 경로·실패 사유만 담는다(PII 무관 — 인제스트는 corpus 문서만 다룸).",
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "reason"
+        ],
+        "title": "AdminIngestFailure",
+        "type": "object"
+      },
+      "AdminIngestReport": {
+        "description": "인제스트 처리 리포트 응답(성공/스킵/실패/정리 + 총수) — Story 8.4, AC1·AC3.\n\n``POST /admin/ingest``가 ``ingest_corpus`` 실행 후 ``IngestReport``를 이 와이어 형태로 매핑해\n즉시 반환한다(동기·잡 큐 없음). 운영자가 어떤 문서가 적재/스킵/실패/정리됐는지 식별한다.\n``total``은 dataclass property라 직렬화에 자동 포함되지 않으므로 명시 필드로 둔다(처리 문서\n총수 = 성공+스킵+실패; ``removed``는 정리분이라 총수 미포함 — ``IngestReport`` 규약 보존).",
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/AdminIngestFailure"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "succeeded",
+          "skipped",
+          "failed",
+          "removed",
+          "total"
+        ],
+        "title": "AdminIngestReport",
+        "type": "object"
+      },
+      "AdminReservationItem": {
+        "description": "운영 예약목록/임의취소 항목(Story 8.3, AC4) — 예약 메타 + 룸 이름 + 예약자 실 이메일.\n\n``GET /admin/reservations`` 목록 항목이자 ``POST .../cancel`` 응답이다.\n``ProviderReservationItem``(제공자 표면, 6.1)의 **운영자판**으로, 예약자를 **익명 라벨이 아니라\n실 이메일**로 노출한다 — admin은 운영자(타인-facing 아님)라 ``AdminAccountItem``과 정합하게\n식별정보를 본다(메모 anonymous-booker-label 예외). ``slot_starts``는 ``Reservation.slot_starts``\nISO ``...Z`` 스냅샷을 ``list[datetime]``로 받아 ``...Z`` 재직렬화한다(취소 후에도 잔존 — 표시\n전용 히스토리). 내부\n``password_hash`` 등은 스키마에 두지 않는다(NFR-6 — 절대 비노출).",
+        "properties": {
+          "booker_email": {
+            "title": "Booker Email",
+            "type": "string"
+          },
+          "booker_id": {
+            "format": "uuid",
+            "title": "Booker Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_name": {
+            "title": "Room Name",
+            "type": "string"
+          },
+          "slot_starts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Starts",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "room_id",
+          "room_name",
+          "booker_id",
+          "booker_email",
+          "status",
+          "slot_starts",
+          "created_at"
+        ],
+        "title": "AdminReservationItem",
+        "type": "object"
+      },
+      "AdminReservationListResponse": {
+        "description": "운영 확정 예약목록 응답(페이지네이션 — AdminAccountListResponse 미러).",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminReservationItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "AdminReservationListResponse",
+        "type": "object"
+      },
+      "BusinessHoursInput": {
+        "description": "요일별 영업시간 입력(같은 날 내 — 자정 넘김 거부, AC3).\n\n``open_time``/``close_time``은 ROOM_TZ 벽시계 시각(``\"HH:MM:SS\"`` ↔ ``datetime.time``).\n``close_time > open_time``을 강제해 자정 넘김(22:00~02:00)·역전을 422로 거부한다 —\nDB CHECK ``ck_business_hours_hours_order``의 친절한 상위 레이어(defense-in-depth, AC3).",
+        "properties": {
+          "close_time": {
+            "format": "time",
+            "title": "Close Time",
+            "type": "string"
+          },
+          "open_time": {
+            "format": "time",
+            "title": "Open Time",
+            "type": "string"
+          },
+          "weekday": {
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weekday",
+          "open_time",
+          "close_time"
+        ],
+        "title": "BusinessHoursInput",
+        "type": "object"
+      },
+      "BusinessHoursPublic": {
+        "description": "바텀시트 표시용 요일별 영업시간(공개 요약, Story 3.3).\n\n``open_time``/``close_time``은 ROOM_TZ 벽시계 시각이며, Pydantic이 ``datetime.time``을\n``\"HH:MM:SS\"`` 문자열로 직렬화한다(snake_case 그대로). 시트가 오늘 요일 행을 골라\n``\"09:00–22:00\"``로 포맷한다(슬롯 도출 아님 — 단순 표시). ``weekday``는 월=0~일=6\n(``date.weekday()`` 규약)이며, ``BusinessHoursInput``과 동일 형상의 **응답 전용** 스키마다.",
+        "properties": {
+          "close_time": {
+            "format": "time",
+            "title": "Close Time",
+            "type": "string"
+          },
+          "open_time": {
+            "format": "time",
+            "title": "Open Time",
+            "type": "string"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weekday",
+          "open_time",
+          "close_time"
+        ],
+        "title": "BusinessHoursPublic",
+        "type": "object"
+      },
+      "ChatMessage": {
+        "description": "대화 한 줄(재수화 표시용). role=user|assistant.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "CursorPage_FavoriteRoomItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FavoriteRoomItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[FavoriteRoomItem]",
+        "type": "object"
+      },
+      "CursorPage_ProviderReservationItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderReservationItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[ProviderReservationItem]",
+        "type": "object"
+      },
+      "CursorPage_ReservationListItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReservationListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[ReservationListItem]",
+        "type": "object"
+      },
+      "CursorPage_ReviewListItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[ReviewListItem]",
+        "type": "object"
+      },
+      "CursorPage_RoomListItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoomListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[RoomListItem]",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "description": "도메인 에러코드 상수(단일 출처). 라우터/서비스는 ``ErrorCode.X``만 사용한다.",
+        "enum": [
+          "SLOT_CONFLICT",
+          "EMAIL_TAKEN",
+          "ROOM_LIMIT_REACHED",
+          "ROOM_NOT_FOUND",
+          "RESERVATION_NOT_FOUND",
+          "NOTIFICATION_NOT_FOUND",
+          "ACCOUNT_NOT_FOUND",
+          "CANCEL_WINDOW_PASSED",
+          "REJECT_WINDOW_PASSED",
+          "RESERVATION_NOT_COMPLETED",
+          "REVIEW_ALREADY_EXISTS",
+          "REVIEW_NOT_FOUND",
+          "REVIEW_REPLY_FORBIDDEN",
+          "REVIEW_REPLY_ALREADY_EXISTS",
+          "FORBIDDEN_ROLE",
+          "UNAUTHENTICATED",
+          "VALIDATION_ERROR",
+          "GEOCODING_UNAVAILABLE",
+          "LLM_PROVIDER_UNAVAILABLE"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
+      "ErrorDetail": {
+        "description": "표준 에러 본문의 ``detail`` 객체(OpenAPI 계약 노출용).",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "표준 에러 응답. 후속 라우터가 ``responses={409: {\"model\": ErrorResponse}}``로 참조.",
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FavoriteCreateRequest": {
+        "description": "즐겨찾기 추가 요청(POST 본문). 토글의 '추가' 방향 — 룸 PK만 받는다.",
+        "properties": {
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id"
+        ],
+        "title": "FavoriteCreateRequest",
+        "type": "object"
+      },
+      "FavoriteRoomItem": {
+        "description": "즐겨찾기 목록 한 행 — 룸 메타 + 신선 잔여 슬롯 + 활성 여부 (AC2·AC3).\n\n``GET /favorites``(목록)·``POST /favorites``(추가 후) 응답 항목이다. 룸 비교용 가격·룸형태·\n부대시설 + 예약 가능 배지용 ``remaining_slots``(서버 ``derive_slots`` 재사용 신선값)에 더해,\n**``is_active``**(AC3 비활성 라벨·진입 차단 판정)와 **``favorited_at``**(목록 정렬 = 최근 추가\n순)을 싣는다. ``provider_id``·좌표·``admin_dong_code``는 싣지 않는다(불필요·내부 필드).\n\n**키 이름 = ``room_id``**(``RoomMapItem``/``RoomSummary``/``RoomListItem``과 동일) — 시트·핀과\n일관. 서비스에서 명시 생성한다(``from_attributes`` 미사용 — 키 변환·remaining_slots 합성).",
+        "properties": {
+          "amenities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "favorited_at": {
+            "title": "Favorited At",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "remaining_slots": {
+            "title": "Remaining Slots",
+            "type": "integer"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_type": {
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "name",
+          "price_per_hour",
+          "room_type",
+          "amenities",
+          "remaining_slots",
+          "is_active",
+          "favorited_at"
+        ],
+        "title": "FavoriteRoomItem",
+        "type": "object"
+      },
+      "GeocodeResult": {
+        "description": "주소 검색(지오코딩) 결과 항목(AC2).\n\n카카오 주소검색 ``documents[]`` 한 항목의 매핑 결과다 — ``lat=y``·``lng=x``(카카오는\nx=경도·y=위도), ``admin_dong_code``는 지역 ``b_code``(Dev Notes 결정). 프론트가 후보\n중 하나를 선택해 ``RoomCreateRequest``의 ``lat``/``lng``/``admin_dong_code``로 실어 보낸다.",
+        "properties": {
+          "address": {
+            "title": "Address",
+            "type": "string"
+          },
+          "admin_dong_code": {
+            "title": "Admin Dong Code",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          }
+        },
+        "required": [
+          "address",
+          "lat",
+          "lng",
+          "admin_dong_code"
+        ],
+        "title": "GeocodeResult",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "description": "로그인 요청(Story 1.8).\n\n``email``은 의도적으로 ``str``(EmailStr 아님)이다 — 로그인은 *검증*이 아니라 *대조*이므로,\n이메일 형식 위반까지 422가 아니라 401로 단일화한다(enumeration·형식 누출 차단, AC2).\n정규화(``.strip().lower()``)는 서비스가 수행한다. ``password``도 정책 validator 없음.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "LogoutRequest": {
+        "description": "로그아웃 요청(AC4 — 멱등). RN=본문 / 웹=쿠키(미전송 시 라우터가 쿠키 폴백).",
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "title": "LogoutRequest",
+        "type": "object"
+      },
+      "NotificationItem": {
+        "description": "미확인 통지 목록 한 행 — 배너 표시 재료(AC3·AC4).\n\n프론트 ``NotificationBanner``가 ``type``·``reason``·``room_name``·``slot_start``로 카피를\n만든다(status_change → \"○○ 예약이 거절됐어요.\" / reservation_reminder → \"○○ 예약이 곧\n다가와요. {KST 시각}…\"). ``reservation_id``는 추적·dismiss 라우팅용. ``provider_id``·내부\n식별자는 노출하지 않는다(``FavoriteRoomItem`` 정신).\n\n**두 종류의 비대칭(Story 5.2·5.3):** ``status_change``는 DB 행이라 ``id``·``created_at``이\n있고, ``reservation_reminder``는 **도출**(행 없음)이라 ``id``=None·``created_at``=None이다.\n``slot_start``는 **양쪽 모두** 라우터가 ``earliest_slot_start``로 합성한다(reminder=윈도 판정\n대상인 가장 이른 슬롯 / **status_change=원래 점유 슬롯[0] — 4.8 immutable 스냅샷·표시용**,\nStory 5.3이 None→값으로 채움). FE는 ``id`` 유무·``type``으로 dismiss 경로를 분기한다\n(reminder=reservation_id 키 / status_change=id 키). 손상/누락 slot_starts는 ``None`` 폴백.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "reservation_id": {
+            "format": "uuid",
+            "title": "Reservation Id",
+            "type": "string"
+          },
+          "room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Name"
+          },
+          "slot_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Start"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "reservation_id",
+          "reason",
+          "room_name",
+          "slot_start",
+          "created_at"
+        ],
+        "title": "NotificationItem",
+        "type": "object"
+      },
+      "ProviderReservationItem": {
+        "description": "제공자 예약현황 목록 한 행 — 예약 메타 + 룸 이름 + 예약자 익명 라벨 (Story 6.1, AC1·AC2).\n\n``GET /provider/reservations``(제공자 소유 룸 예약 목록) 응답 항목이다.\n``ReservationListItem``(예약자 본인 표면, 4.8)의 **거울상**으로, 예약 식별·상태·생성시각 +\n**시간 스냅샷**(``slot_starts`` — 취소/거절 후에도 잔존하는 표시 전용 히스토리) + 룸 이름을\n싣되, 예약자는 **안정 익명 라벨**(``booker_label``)만 노출한다.\n\n**프라이버시(AC2·FR-23 — ★핵심):** ``booker_id``·``email``·연락처·좌표 등 **식별/내부 필드를\n스키마에 두지 않는다**. ``booker_label``은 ``booker_id``에서 결정적·비가역 해시 파생\n(``booker_display_label`` — ``sha256(str(booker_id))[:6]``)이라 같은 예약자=같은 라벨(제공자가\n동일 예약자 구분·집계 가능)이고, 이메일/raw UUID는 복원 불가하다(``ReservationPublic``·\n``ReservationListItem``의 \"필요한 것만 노출\" 정신).\n\n- **``room_name``은 라우터가 합성**한다(``list_provider_rooms`` 결과로 만든 이름 맵에서 — 4.9\n  순환 회피로 reservations.service rooms import 금지, ``ReservationListItem`` 선례). 본인 표면이\n  아니라 제공자 소유자 뷰라 ``is_active``·``has_review``는 싣지 않는다(소비 UI 후속).\n- **``slot_starts``는 스냅샷**(``Reservation.slot_starts`` ISO ``...Z`` 문자열)을\n  ``list[datetime]``로 받아 ``...Z`` 재직렬화한다(``ReservationListItem`` 미러).\n  취소/거절 예약도 점유 행은 DELETE됐어도 이 스냅샷으로 날짜·시간을 표시한다.",
+        "properties": {
+          "booker_label": {
+            "title": "Booker Label",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_name": {
+            "title": "Room Name",
+            "type": "string"
+          },
+          "slot_starts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Starts",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "room_id",
+          "room_name",
+          "booker_label",
+          "status",
+          "slot_starts",
+          "created_at"
+        ],
+        "title": "ProviderReservationItem",
+        "type": "object"
+      },
+      "ProviderRoomDetail": {
+        "description": "provider 본인 룸 전체 상세 — 등록/수정 폼 prefill용 (``GET /rooms/mine``).\n\n소유자 전용 표면이라 공개 요약과 달리 **수정에 필요한 모든 필드**(좌표·지역·주소·영업시간)를\n싣는다. provider 웹 표면 구축(idea.md L36 스터디룸 설정/수정)의 폼이 이 응답으로 현재 값을\n미리 채운다. 룸이 없으면 라우터가 404 ``ROOM_NOT_FOUND``(= 아직 등록 안 함 → 폼은 생성 모드).",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "admin_dong_code": {
+            "title": "Admin Dong Code",
+            "type": "string"
+          },
+          "amenities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "business_hours": {
+            "items": {
+              "$ref": "#/components/schemas/BusinessHoursPublic"
+            },
+            "title": "Business Hours",
+            "type": "array"
+          },
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_type": {
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "name",
+          "price_per_hour",
+          "capacity",
+          "room_type",
+          "amenities",
+          "lat",
+          "lng",
+          "admin_dong_code",
+          "address",
+          "business_hours"
+        ],
+        "title": "ProviderRoomDetail",
+        "type": "object"
+      },
+      "RefreshRequest": {
+        "description": "재발급 요청(AC3). RN=본문 / 웹=쿠키(미전송 시 라우터가 쿠키 폴백).",
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "title": "RefreshRequest",
+        "type": "object"
+      },
+      "Region": {
+        "description": "지역 콤보의 동/읍/면 옵션 한 항목 (Story 3.4, AC1).\n\n``code``는 동/읍/면 레벨 지역 코드(``XXXXXXXX00``), ``name``은 짧은 동 라벨\n(``\"역삼동\"`` — 시군구는 ``RegionGroup``이 들고 있어 동은 말단만 표시). ``room_count``는\n그 동에 있는 활성 룸 수(콤보 옵션에 개수 힌트). **룸이 있는 동만** 제시한다(빈 지역 미노출).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "room_count": {
+            "title": "Room Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "room_count"
+        ],
+        "title": "Region",
+        "type": "object"
+      },
+      "RegionGroup": {
+        "description": "지역 콤보의 시/군/구 그룹 (Story 3.4, AC1).\n\n``GET /rooms/regions`` 응답의 한 항목 = 룸이 있는 한 시/군/구다. ``name``은 **시도명을\n포함**해 동명 시군구 모호성을 없앤다(``\"서울특별시 강남구\"``). ``dongs``는 그 시군구에서\n**룸이 있는 동/읍/면**만(빈 동 미노출). ``room_count``는 시군구 전체 활성 룸 수. 와이어는\nsnake_case 그대로(시각 필드 없어 ``field_serializer`` 불필요).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "dongs": {
+            "items": {
+              "$ref": "#/components/schemas/Region"
+            },
+            "title": "Dongs",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "room_count": {
+            "title": "Room Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "dongs",
+          "room_count"
+        ],
+        "title": "RegionGroup",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "description": "회원가입 요청. 형식·정책·역할 위반은 Pydantic 검증 → 1.5 핸들러가 422로 단일화.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "booker",
+              "provider"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "role"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "ReservationCreateRequest": {
+        "description": "즉시 예약 요청(POST 본문) — 점유할 연속 슬롯 시작시각들(AC1·AC2).\n\n``slot_starts``는 UTC aware datetime 리스트다(4.4가 추출한 서버 UTC ISO 그대로). 본문 검증으로\n빈 배열·naive datetime·중복·교차일(서로 다른 ROOM_TZ 날짜)을 **선차단**해 422로 되돌린다 —\nservice ``create_reservation``의 ``ValueError`` fail-fast(빈/naive/중복)가 미처리 500으로 새지\n않도록 라우터 도달 전에 막는다(반복 함정 #6). 연속성 판정은 4.4 UI(클라)가 이미 끝냈고, 서버는\n확정 시점에 ``derive_slots`` 재사용으로 **가용 슬롯 집합 멤버십**만 재검증한다(라우터, AC2).\n\n``room_id``는 **경로 파라미터**(중첩 라우트)라 본문에 두지 않는다. ``booker_id``는 인증\nprincipal에서 도출하므로 본문에 없다(클라가 예약자를 지정할 수 없음 — RBAC).",
+        "properties": {
+          "slot_starts": {
+            "items": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Slot Starts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slot_starts"
+        ],
+        "title": "ReservationCreateRequest",
+        "type": "object"
+      },
+      "ReservationListItem": {
+        "description": "예약현황 목록 한 행 — 예약 메타 + 룸 이름 + 슬롯 시간 스냅샷 (Story 4.8, AC1·AC2·AC4).\n\n``GET /reservations``(본인 예약 목록) 응답 항목이다. 예약 식별·상태·생성시각 + **시간 스냅샷**\n(``slot_starts`` — 취소/거절 후에도 잔존하는 표시 전용 히스토리, 범위 결정 #1) + 룸 이름·활성\n여부를 싣는다. ``provider_id``·좌표 등 내부 필드는 노출하지 않는다(``ReservationPublic`` 정신).\n\n- **``room_name``·``is_active``는 라우터가 ``session.get(Room, …)``로 합성**한다(4.9 순환 회피로\n  reservations.service rooms import 금지, ``FavoriteRoomItem`` 선례). ``is_active``는 비활성 룸\n  상세 Link 차단 판정용(인증 표면이라 노출 OK — ``FavoriteRoomItem`` 선례).\n- **``slot_starts``는 스냅샷**(``Reservation.slot_starts`` ISO ``...Z`` 문자열)을\n  ``list[datetime]``로 받아 ``...Z`` 재직렬화한다(``ReservationPublic._ser_slot_starts`` 미러 —\n  와이어 규약 정규화).\n  cancellable/6h은 **FE가 ``slot_starts``로 계산**(4.7 범위 결정 #3 — 서버는 cancellable 필드를\n  노출하지 않고, 취소 엔드포인트가 6h 경계를 timedelta로 최종 강제).",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_review": {
+            "title": "Has Review",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewListItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_name": {
+            "title": "Room Name",
+            "type": "string"
+          },
+          "slot_starts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Starts",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "room_id",
+          "room_name",
+          "status",
+          "slot_starts",
+          "created_at",
+          "is_active",
+          "has_review"
+        ],
+        "title": "ReservationListItem",
+        "type": "object"
+      },
+      "ReservationPublic": {
+        "description": "즉시 예약 성공 응답(예약 리소스, AC1).\n\n생성된 ``Reservation``(상태머신 단위)의 식별·상태·생성시각 + 점유한 ``slot_starts``를 싣는다.\ndatetime은 ``...Z``(``RoomPublic``·``RoomSlot`` 선례 — ``isoformat_utc``). ``provider_id`` 등\n내부 필드는 노출하지 않는다(예약자 본인 표면이라 ``booker_id``는 노출 — 응답 주체 확인용).",
+        "properties": {
+          "booker_id": {
+            "format": "uuid",
+            "title": "Booker Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "slot_starts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Starts",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "room_id",
+          "booker_id",
+          "status",
+          "created_at",
+          "slot_starts"
+        ],
+        "title": "ReservationPublic",
+        "type": "object"
+      },
+      "ReviewCreateRequest": {
+        "description": "후기 작성 요청(POST 본문) — 별점 1~5 + 텍스트 1~500자(AC1·AC2).\n\n별점 범위 밖·텍스트 길이 위반은 Pydantic이 **선차단**해 422로 되돌린다 — service가 별점/길이를\n재검증하다 ``ValueError``를 500으로 흘리지 않도록 라우터 도달 전에 막는다(반복 함정 #1).\n텍스트는 **필수**(KTH 결정 2 — 빈 후기 금지): ``min_length=1`` + 공백만 방어(strip 후 재검증).\n\n``reservation_id``는 **경로 파라미터**(중첩 라우트)라 본문에 두지 않는다. ``booker_id``는 인증\nprincipal에서 도출하므로 본문에 없다(클라가 작성자를 지정할 수 없음 — RBAC).",
+        "properties": {
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rating",
+          "text"
+        ],
+        "title": "ReviewCreateRequest",
+        "type": "object"
+      },
+      "ReviewListItem": {
+        "description": "룸 상세 후기 한 행 — 별점·텍스트·작성일 + 선택적 제공자 답글(Story 5.5 AC4 · 5.6 AC5, 익명).\n\n``GET /rooms/{room_id}/reviews``(공개·무인증) 응답 항목이다. **작성자 식별 필드를 포함하지\n않는다**(KTH 결정 1 — users엔 email만 있어 표시 이름 부재, 공개 룸 상세에 email 노출 =\n프라이버시 누수). ``id``는 React key·답글 연결용(작성자 식별 아님). 5.6: ``reply``는 후기에\n제공자 답글이 있으면 ``ReviewReplyView``(익명), 없으면 ``None``(기존 직렬화 불변).\ndatetime ``...Z``.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewReplyView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "created_at"
+        ],
+        "title": "ReviewListItem",
+        "type": "object"
+      },
+      "ReviewPublic": {
+        "description": "후기 작성 성공 응답(생성된 후기 리소스, AC1).\n\n생성된 ``Review``의 식별·별점·텍스트·작성시각 + 귀속(room_id·reservation_id)을 싣는다.\n작성 주체 본인 응답이라 식별 필드를 노출해도 무방하나, 일관성을 위해 별점/텍스트/시각/귀속만\n싣는다(``booker_id`` 미노출). datetime은 ``...Z``(``isoformat_utc`` — reservations 선례).",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "reservation_id": {
+            "format": "uuid",
+            "title": "Reservation Id",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reservation_id",
+          "room_id",
+          "rating",
+          "text",
+          "created_at"
+        ],
+        "title": "ReviewPublic",
+        "type": "object"
+      },
+      "ReviewReplyCreateRequest": {
+        "description": "제공자 답글 작성 요청(POST 본문) — 텍스트 1~500자(Story 5.6 AC1·AC2).\n\n텍스트 길이/공백 위반은 Pydantic이 **선차단**해 422로 되돌린다 — service가 길이를 재검증하다\n``ValueError``를 500으로 흘리지 않도록 라우터 도달 전에 막는다(반복 함정 #1 —\n``ReviewCreateRequest`` 미러). ``review_id``는 **경로 파라미터**라 본문에 없다.\n``provider_id``는 인증 principal에서 도출하므로 본문에 없다(클라가 작성자 지정 불가 — RBAC).",
+        "properties": {
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ReviewReplyCreateRequest",
+        "type": "object"
+      },
+      "ReviewReplyPublic": {
+        "description": "답글 작성 성공 응답(생성된 답글 리소스, Story 5.6 AC1).\n\n생성된 ``ReviewReply``의 식별·귀속(review_id)·텍스트·작성시각을 싣는다. provider 본인 응답이라\n식별 노출이 무방하나 일관성을 위해 ``provider_id``는 싣지 않는다. datetime ``...Z``.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "review_id",
+          "text",
+          "created_at"
+        ],
+        "title": "ReviewReplyPublic",
+        "type": "object"
+      },
+      "ReviewReplyView": {
+        "description": "룸 상세 후기에 중첩되는 제공자 답글 공개 노출 — 텍스트·작성일 **only**(Story 5.6 AC5, 익명).\n\n``GET /rooms/{room_id}/reviews`` 응답의 각 후기에 ``reply``로 중첩된다(공개·무인증). **제공자\n식별 필드를 포함하지 않는다**(KTH 결정 5 — users엔 email만, 공개 노출에 식별 누수 금지). FE\n라벨은 \"제공자 답글\" 고정. datetime ``...Z``.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "created_at"
+        ],
+        "title": "ReviewReplyView",
+        "type": "object"
+      },
+      "RoomAvailability": {
+        "description": "룸별 가용성 집계값 — 핀 색(FR-5) 결정용 (Story 3.1, AC1·AC3).\n\n각 항목은 한 활성 룸의 \"**오늘(ROOM_TZ=KST) 현재시각 이후** 남은 빈 슬롯 수\"다. 서버가\n``aggregate_availability``에서 **1회** 집계하므로 클라이언트가 핀마다 슬롯을 N회 재계산하지\n않는다(architecture.md L362 금지 안티패턴 회피, NFR-2 성능).\n\n**이 두 필드만** 둔다(AC3 — 집계값만). 좌표·가격·이름 등 룸 메타데이터는 싣지 않는다 —\n그건 탐색/목록/바텀시트 엔드포인트(Story 3.2·3.3·3.4·3.5)의 책임이며, 클라이언트가\n``room_id``로 조인한다. 가용성에 메타를 합치면 책임이 섞인다.\n\n**핀 색 분기:** ``remaining_slots >= 1`` → 예약 가능(초록), ``0`` → 마감(회색). 이 ``>= 1``\n판정은 **자명한 클라이언트 분기**일 뿐, architecture.md L362가 금지하는 \"슬롯 N회 재계산\"이\n아니다(슬롯 계산은 서버가 1회 끝냈다).\n\n**와이어 규약:** snake_case 그대로(``room_id``·``remaining_slots``, camelCase 변환 금지 —\narchitecture.md L240·L286). 시각 필드가 없어 ``field_serializer``가 불필요하다.",
+        "properties": {
+          "remaining_slots": {
+            "title": "Remaining Slots",
+            "type": "integer"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "remaining_slots"
+        ],
+        "title": "RoomAvailability",
+        "type": "object"
+      },
+      "RoomCreateRequest": {
+        "description": "공간 등록 요청(provider 전용 쓰기, AC1).\n\n범위·enum 위반은 Pydantic 검증 → 1.5 핸들러가 422로 단일화(P3 1차 차단 + 2.1 defer 회수).\n좌표(``lat``/``lng``)·``admin_dong_code``는 클라이언트가 ``GET /rooms/geocode`` 결과에서\n선택해 실어 보낸다(MVP client-trusted — 인증된 provider + DB CHECK 방어, Dev Notes 참조).",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "admin_dong_code": {
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Admin Dong Code",
+            "type": "string"
+          },
+          "amenities": {
+            "items": {
+              "enum": [
+                "parking",
+                "projector_tv",
+                "coffee",
+                "whiteboard",
+                "wifi",
+                "etc"
+              ],
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "business_hours": {
+            "items": {
+              "$ref": "#/components/schemas/BusinessHoursInput"
+            },
+            "minItems": 1,
+            "title": "Business Hours",
+            "type": "array"
+          },
+          "capacity": {
+            "minimum": 1.0,
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lng",
+            "type": "number"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "minimum": 0.0,
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "room_type": {
+            "enum": [
+              "open",
+              "private"
+            ],
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "price_per_hour",
+          "capacity",
+          "room_type",
+          "lat",
+          "lng",
+          "admin_dong_code",
+          "business_hours"
+        ],
+        "title": "RoomCreateRequest",
+        "type": "object"
+      },
+      "RoomListItem": {
+        "description": "지역 목록 한 행 — 이름·가격·룸형태·부대시설 + 신선 잔여 슬롯 (Story 3.4, AC1·AC4).\n\n``GET /rooms/search?region_code=`` 응답의 한 항목이다. UJ-1의 \"가격·시설 비교\"를 위해\n리스트 행에 가격·룸형태·부대시설을 싣고, 예약 가능 배지를 위해 **오늘(ROOM_TZ) 신선\n``remaining_slots``**(서버가 ``derive_slots`` 재사용으로 1회 집계)를 함께 싣는다.\n\n**공개 엔드포인트라 ``provider_id``·``is_active``·``lat``/``lng``·``admin_dong_code``·\n``created_at``은 싣지 않는다**(내부/소유 필드 노출 회피 + 과조회 방지 — ``RoomSummary``/\n``RoomMapItem`` 선례). ``RoomPublic``(provider_id·is_active 노출)을 재사용하지 않는 **공개\n표면 전용** 스키마다. 상세(영업시간·수용 등)는 행 탭이 여는 ``RoomSummary``(3.3)가 책임진다.\n\n**키 이름 = ``room_id``**(``RoomMapItem``/``RoomSummary``와 동일 — 시트 재사용 시 일관).\n``Room.id``를 ``room_id``로 노출하므로 서비스에서 명시 생성한다(``from_attributes`` 미사용).\n와이어는 snake_case 그대로(시각 필드 없어 ``field_serializer`` 불필요).",
+        "properties": {
+          "amenities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "remaining_slots": {
+            "title": "Remaining Slots",
+            "type": "integer"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_type": {
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "name",
+          "price_per_hour",
+          "room_type",
+          "amenities",
+          "remaining_slots"
+        ],
+        "title": "RoomListItem",
+        "type": "object"
+      },
+      "RoomMapItem": {
+        "description": "룸 핀 렌더용 최소 메타 — 첫 진입 지도 좌표 공급 (Story 3.2, AC1·AC2).\n\n각 항목은 한 활성 룸의 **핀을 찍는 데 필요한 최소 정보**(좌표·이름)다. 프론트가 이\n목록을 ``GET /rooms/availability``(``RoomAvailability``)와 ``room_id``로 인메모리\n조인해 핀 좌표(이 응답)에 가용성 색(저쪽 응답)을 입힌다.\n\n**이 네 필드만** 둔다 — 가격·영업시간·부대시설·수용·주소·``provider_id``·\n``created_at``은 **싣지 않는다**. 상세는 바텀시트(Story 3.3)의 신선 단일 조회 책임이고,\n공개 엔드포인트라 ``provider_id`` 노출을 피하며, 과조회를 막는다(L155 신선도 정책).\n\n**키 이름 = ``room_id``**(``RoomAvailability.room_id``와 동일) → 두 공개 GET을\n``room_id``로 조인하기 위함이다. ``Room.id``를 ``room_id``로 노출하므로\n``from_attributes`` 자동 매핑에 의존하지 않고 서비스에서 명시 생성한다\n(``RoomMapItem(room_id=r.id, ...)`` — ``RoomAvailability`` 명시 생성 선례).\n\n**와이어 규약:** snake_case 그대로(``room_id``·``name``·``lat``·``lng``). 시각 필드가\n없어 ``field_serializer``가 불필요하다.",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "name",
+          "lat",
+          "lng"
+        ],
+        "title": "RoomMapItem",
+        "type": "object"
+      },
+      "RoomPublic": {
+        "description": "공간 등록 성공 응답(룸 리소스). ``created_at``은 ``...Z``(1.7 ``UserPublic`` 패턴).",
+        "properties": {
+          "admin_dong_code": {
+            "title": "Admin Dong Code",
+            "type": "string"
+          },
+          "amenities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "provider_id": {
+            "format": "uuid",
+            "title": "Provider Id",
+            "type": "string"
+          },
+          "room_type": {
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "provider_id",
+          "name",
+          "price_per_hour",
+          "capacity",
+          "room_type",
+          "amenities",
+          "lat",
+          "lng",
+          "admin_dong_code",
+          "is_active",
+          "created_at"
+        ],
+        "title": "RoomPublic",
+        "type": "object"
+      },
+      "RoomSlot": {
+        "description": "그날 1시간 슬롯 하나 — 시작시각(UTC) + 상태 (Story 4.3, AC1·AC2).\n\n``GET /rooms/{room_id}/slots`` 응답 ``slots[]``의 한 항목이다. ``slot_start``는\n``derive_slots``(2.1)가 도출한 **UTC 인스턴트**(tz-aware)이며, ``...Z`` 와이어 규약으로\n직렬화한다(``RoomPublic.created_at`` 선례 — ``isoformat_utc``). 클라이언트는 이 UTC를\nAsia/Seoul 벽시계(\"14:00\")로 **표시만** 한다(슬롯 재계산 금지 — architecture.md L362).\n\n``status``는 ``available``(선택 가능)/``past``(지난 시간)/``reserved``(예약됨)의 3상태다.\n``reserved``는 **Story 4.9 예약 차감 연결 전까지 미발생**한다(호출부가\n``reserved_starts=frozenset()``을 전달 — 3.1·3.3 동일 seam). 가격·이름 등 룸 메타는 싣지\n않는다(슬롯 단위 — 메타는 ``RoomSummary`` 책임).",
+        "properties": {
+          "slot_start": {
+            "title": "Slot Start",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "past",
+              "reserved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot_start",
+          "status"
+        ],
+        "title": "RoomSlot",
+        "type": "object"
+      },
+      "RoomSlotsResponse": {
+        "description": "날짜별 슬롯 목록 + 다음 빈 날짜 (Story 4.3, AC1·AC3).\n\n``GET /rooms/{room_id}/slots?date=YYYY-MM-DD`` 응답이다 — 요청 ``date``(ROOM_TZ)의 1시간\n슬롯을 상태별로(``slots``) + 그날 빈 슬롯이 없을 때 안내할 **다음 빈 날짜**\n(``next_available_date``)를 함께 싣는다.\n\n- ``date`` = 요청 날짜 echo(ROOM_TZ 기준 ``date`` — 클라가 어느 날 응답인지 확인).\n- ``slots`` = 그날 1시간 슬롯 상태별 리스트(휴무·미영업 요일 → 빈 리스트, 에러 아님).\n- ``next_available_date`` = 요청 날 **다음날부터** 30일 상한 내 첫 \"가용 슬롯 ≥ 1개\" 날\n  (ROOM_TZ 기준 ``date``). 30일 내 빈 날이 없으면 ``null``(막다른 화면 금지 — 안내만).\n\n가격·이름·좌표 등 룸 메타는 싣지 않는다(슬롯·다음빈날만 — 메타는 ``RoomSummary``가 별도 제공,\n클라가 ``useRoomSummary``와 조인). 와이어 snake_case 그대로\n(``slot_start``·``next_available_date``).",
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "next_available_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Available Date"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/RoomSlot"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date",
+          "slots",
+          "next_available_date"
+        ],
+        "title": "RoomSlotsResponse",
+        "type": "object"
+      },
+      "RoomSummary": {
+        "description": "바텀시트 단일 룸 신선 요약 — 1차/2차 정보 + 신선 잔여 슬롯 (Story 3.3, AC1·AC4).\n\n핀(3.2)·목록 항목(3.4)이 탭한 룸의 **신선 요약**이다. ``GET /rooms/{room_id}``가 단일 룸\n조회로 가격·수용·룸 형태·부대시설·영업시간 + ``derive_slots``(2.1) 재사용한 **오늘 신선\n``remaining_slots``**를 함께 싣는다. 이로써 시트의 \"예약 가능 여부\"가 핀 탭 시점의 동결\n스냅샷이 아니라 신선값이 된다(3.2 stale 배지 회수).\n\n**위치 미니 지도(Story 4.2)를 위해 ``lat``/``lng``를 노출한다** — 공개 스터디룸 좌표는 지도\n표시가 곧 제품 목적이라 공개해도 안전하다(``RoomMapItem``이 이미 좌표를 공개 노출하는 선례).\n반면 **``provider_id``·``is_active``·``created_at``·``admin_dong_code``는 여전히 싣지 않는다**\n(내부/소유 필드·지역 코드는 사람이 읽는 값 아님 — 노출 회피).\n``RoomPublic``(provider_id·is_active 노출)을 재사용하지 않는 **공개 표면 전용** 스키마다.\n``address``(표시용 주소)는 provider 웹 표면 구축으로 ``Room`` 컬럼이 되어 노출한다 — 바텀시트·\n상세에서 사람이 읽는 주소를 보여준다(좌표는 지도용, 주소는 텍스트용). 미입력이면 ``null``.\n4.2 상세 화면이 이 엔드포인트를 후기/평점·예약 UI로 **확장**한다(중복 아님).\n\n**키 이름 = ``room_id``**(``RoomMapItem``/``RoomAvailability``와 동일). ``Room.id``를\n``room_id``로 노출하므로 서비스에서 명시 생성한다(``from_attributes`` 미사용 — 키 변환).\n**와이어 규약:** snake_case 그대로(camelCase 변환 금지). 시각 필드(``...Z``)가 없어\n``field_serializer``가 불필요하다(``open_time``/``close_time``은 ``BusinessHoursPublic`` 처리).",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "amenities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Amenities",
+            "type": "array"
+          },
+          "business_hours": {
+            "items": {
+              "$ref": "#/components/schemas/BusinessHoursPublic"
+            },
+            "title": "Business Hours",
+            "type": "array"
+          },
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "is_closed_today": {
+            "title": "Is Closed Today",
+            "type": "boolean"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_per_hour": {
+            "title": "Price Per Hour",
+            "type": "integer"
+          },
+          "remaining_slots": {
+            "title": "Remaining Slots",
+            "type": "integer"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_type": {
+            "title": "Room Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "name",
+          "price_per_hour",
+          "capacity",
+          "room_type",
+          "amenities",
+          "business_hours",
+          "remaining_slots",
+          "is_closed_today",
+          "lat",
+          "lng",
+          "address"
+        ],
+        "title": "RoomSummary",
+        "type": "object"
+      },
+      "RoomUpdateRequest": {
+        "description": "공간 수정 요청(provider 전용 쓰기·부분 수정 PATCH 시맨틱, Story 2.3 AC1·AC5).\n\n**모든 필드가 Optional**(기본 ``None``)이며, ``RoomCreateRequest``와 **동일한 ``Field``\n제약**(범위·``Literal``·max_length)을 Optional 위에 그대로 부여한다. ``id``·``provider_id``·\n``created_at``·``is_active``는 **수정 불가**라 요청 스키마에 포함하지 않는다\n(불변 필드·is_active=E8).\n\n**PATCH 시맨틱(핵심 함정):** 서비스가 ``model_dump(exclude_unset=True)``로 **요청에 실제로\n온 필드만** 골라 적용한다 — \"필드 미제공\"과 \"명시적 null\"을 구분한다. ``business_hours``가\n키 자체로 없으면 영업시간 **불변**, 키가 있으면 **전체 교체**(``update_room``). 따라서 검증기는\n\"제공된 필드\"에만 작동해야 한다 → ``amenities``/``business_hours``가 ``None``이면 건너뛴다\n(미제공 = 검증 대상 아님). PUT 시맨틱(미제공 필드를 None으로 덮어쓰기)으로 착각 금지.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "admin_dong_code": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Dong Code"
+          },
+          "amenities": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "parking",
+                    "projector_tv",
+                    "coffee",
+                    "whiteboard",
+                    "wifi",
+                    "etc"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amenities"
+          },
+          "business_hours": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BusinessHoursInput"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Hours"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "lng": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lng"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "price_per_hour": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Hour"
+          },
+          "room_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "open",
+                  "private"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Type"
+          }
+        },
+        "title": "RoomUpdateRequest",
+        "type": "object"
+      },
+      "SendMessageRequest": {
+        "description": "``POST /chatbot/messages``·``/stream`` 본문 — 메시지 + 디바이스 식별자 + (선택) 현재 좌표.",
+        "properties": {
+          "device_id": {
+            "pattern": "^[A-Za-z0-9_-]{8,128}$",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "lng": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lng"
+          },
+          "message": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "device_id"
+        ],
+        "title": "SendMessageRequest",
+        "type": "object"
+      },
+      "SendMessageResponse": {
+        "description": "``POST /chatbot/messages`` 응답 — 봇 전체 응답(비스트리밍) + 도출된 thread_id.",
+        "properties": {
+          "reply": {
+            "title": "Reply",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reply",
+          "thread_id"
+        ],
+        "title": "SendMessageResponse",
+        "type": "object"
+      },
+      "TokenResponse": {
+        "description": "토큰 발급 응답(로그인·회전 공용, AC1·AC3). 와이어는 snake_case 유지(L286).\n\n``refresh_token``은 **원문**만 반환한다(해시는 DB 내부 — 절대 응답에 노출 금지).",
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "TranscriptResponse": {
+        "description": "``GET /chatbot/messages`` 응답 — 현재 thread의 메시지 이력(재수화).",
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "TranscriptResponse",
+        "type": "object"
+      },
+      "UserPublic": {
+        "description": "가입 성공 응답(사용자 리소스). ``password_hash`` 필드 없음 — 해시 비노출(AC1).",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserPublic",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "DeskNow 백엔드 API (Story 1.2 골격).",
+    "title": "DeskNow API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/accounts": {
+      "get": {
+        "description": "booker·provider 계정 목록을 조회한다 → 200(admin 가드, 읽기 전용·페이지네이션, AC4).\n\n로그인 → RBAC 403 게이트 → 실데이터 조회를 end-to-end로 실증한다(AC2·AC4).",
+        "operationId": "admin_list_accounts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Accounts",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{account_id}/deactivate": {
+      "post": {
+        "description": "계정을 비활성한다(provider면 룸 캐스케이드) → 200(admin 가드, 멱등, Story 8.2).\n\n행 삭제가 아닌 ``is_active`` flip이라 액션 동사 ``POST .../deactivate``를 쓴다(취소/거절\n4.7/6.2 선례). 멱등(이미 비활성)은 200이라 별도 status 없음. admin 대상/미존재는 404\n``ACCOUNT_NOT_FOUND``(존재 누설 방지). 캐스케이드·원자성·멱등은 전부 service가 보장한다.",
+        "operationId": "admin_deactivate_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate Account",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ingest": {
+      "post": {
+        "description": "``docs_corpus/`` 문서 인제스트를 트리거하고 처리 리포트를 반환한다(Story 8.4, AC1·3·5).\n\n**★동기 ``def`` 핸들러(``async def`` 절대 금지):** ``ingest_corpus``·``build_embedder``(OpenAI\nHTTP)·``SqlDocumentChunkStore``(동기 psycopg3 commit)는 전부 블로킹이다. FastAPI는 **동기\n``def`` 라우트를 스레드풀에서 실행**해 이벤트 루프를 막지 않는다 — ``async def``로 만들면 블로킹\n호출이 루프를 직접 막아 전 서버가 정지한다(반복 함정). 처리 후 ``IngestReport``를 200으로 즉시\n반환한다(잡 큐·폴링 없음). 멱등·부분실패·stale 청크 reconcile은 전부 service/코어가 보장한다.\n\n**에러 계약:** 무토큰 401 ``UNAUTHENTICATED``·비-admin 403 ``FORBIDDEN_ROLE``만. per-doc 실패는\n리포트 본문(``failed``)이라 엔드포인트 자체는 200(404/409 없음).",
+        "operationId": "admin_trigger_ingest",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminIngestReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "summary": "Trigger Ingest",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ingest/documents": {
+      "get": {
+        "description": "인제스트 지식베이스 문서 목록을 상태와 함께 조회한다 → 200(admin 가드, 읽기 전용).\n\n운영자가 인제스트 메뉴 진입 시 현재 적재 현황(어떤 문서가 ingested/pending/orphan인지)을\n본다. **읽기 전용**(OpenAI·DB 쓰기 0) — ``POST /ingest``의 파괴적 실행과 분리돼, 메뉴를\n여는 것만으로 인제스트가 돌지 않는다. 정적 경로 ``/ingest/documents``가 ``POST /ingest``와\n충돌하지 않도록 별도 서브패스로 둔다(메서드+경로 모두 구분).",
+        "operationId": "admin_list_ingest_documents",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminIngestDocumentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "summary": "List Ingest Documents",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reservations": {
+      "get": {
+        "description": "확정 예약 목록을 조회한다 → 200(admin·읽기 전용·confirmed-only·페이지네이션, Story 8.3).\n\n운영자가 임의 취소 대상(확정 예약)을 식별하는 목록이다. 예약자는 실 이메일로 노출한다\n(익명 라벨 아님 — accounts 정합). 정렬·페이지네이션·N+1 합성은 전부 service가 보장한다.",
+        "operationId": "admin_list_reservations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReservationListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Reservations",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reservations/{reservation_id}/cancel": {
+      "post": {
+        "description": "확정 예약을 임의 취소한다(슬롯 재활성 + 예약자 통지) → 200(admin 가드, 멱등, Story 8.3).\n\n상태 전이(``cancelled``) + 점유 슬롯 DELETE(재활성) + 예약자 ``status_change``/``cancelled``\n통지가 **단일 트랜잭션으로 원자**(deferred L42 회수). 행 삭제가 아닌 status flip이라 액션 동사\n``POST .../cancel``을 쓴다(4.7/6.2 선례). 멱등(이미 종료)은 200(별도 409 없음). 미존재는 404\n``RESERVATION_NOT_FOUND``(누설 방지). **시간 게이트 없음**(admin 권한 — service가 프리미티브\n직접 호출). 슬롯 재활성·통지 원자·멱등은 전부 service가 보장한다.",
+        "operationId": "admin_cancel_reservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReservationItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Reservation",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "이메일·비밀번호로 로그인한다 → 200 + 토큰 쌍(본문) + 인증 쿠키 set(AC1·AC2).\n\n잘못된 자격(미존재·틀린 비번·비활성)은 서비스가 401 ``UNAUTHENTICATED``로 단일화한다.",
+        "operationId": "auth_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "로그아웃한다 → 204(AC4 — 멱등). refresh 해시 행을 삭제하고 인증 쿠키를 제거한다.\n\n토큰이 본문/쿠키 모두 없거나 이미 무효여도 204로 정상 종료한다(멱등).",
+        "operationId": "auth_logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "현재 인증된 사용자를 반환한다 → 200 + UserPublic(인증 필요, AC1·AC5 실증).\n\n프론트 세션 복원에 사용 + ``get_current_principal``(헤더/쿠키 추출)을 실증한다.",
+        "operationId": "auth_me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "refresh 토큰으로 새 토큰 쌍을 회전 발급한다 → 200(AC3).\n\n토큰은 본문(RN) 또는 쿠키(웹)에서 추출한다. 만료/위조/회전·로그아웃됨은 401.",
+        "operationId": "auth_refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "이메일·비밀번호·역할로 가입한다 → 201 + UserPublic(해시 비노출).",
+        "operationId": "auth_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/chatbot/messages": {
+      "get": {
+        "description": "현재 thread의 메시지 이력을 반환한다 → 200(재수화용, AC4). 빈 thread=[]. 미인증 401.",
+        "operationId": "chatbot_get_transcript",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,128}$",
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Transcript",
+        "tags": [
+          "chatbot"
+        ]
+      },
+      "post": {
+        "description": "메시지를 보내고 봇의 전체 응답을 반환한다 → 200(로그인 필요, AC3).\n\n같은 ``thread_id``(=``user_id:device_id``)로 연속 전송 시 이전 맥락이 유지된다(checkpointer\n자동 누적·멀티턴). LLM 업스트림 실패는 502 ``LLM_PROVIDER_UNAVAILABLE``. 미인증은 401.",
+        "operationId": "chatbot_send_message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Send Message",
+        "tags": [
+          "chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/session": {
+      "delete": {
+        "description": "해당 thread의 대화 상태를 폐기한다 → 204(로그아웃 초기화·멱등, AC5). 미인증 401.",
+        "operationId": "chatbot_reset_session",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,128}$",
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Session",
+        "tags": [
+          "chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/stream": {
+      "post": {
+        "description": "메시지를 보내고 봇 응답을 **SSE 토큰 스트리밍**한다 → 200 ``text/event-stream``(AC1·AC2).\n\n미인증 401은 스트림 시작 **전** dependency(``get_current_principal``)라 정상 HTTP 401이다.\n스트림이 시작되면 200 헤더가 이미 송신되므로(함정 #2), LLM 업스트림 실패를 ``raise``로 전파하지\n않고 ``event: error`` 프레임으로 **인밴드** 전달한다 → 클라가 graceful degrade(AC4).\n각 토큰은 ``data: {\"delta\": \"...\"}``(JSON — ``\\n``·공백·``[DONE]`` 섞여도 프레임 무손상,\ndeferred L129 회수), 정상 종료는 ``event: done``. 같은 ``thread_id``로 재스트림 시 7.3\ncheckpointer가 맥락을 누적한다.",
+        "operationId": "chatbot_stream_message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream Message",
+        "tags": [
+          "chatbot"
+        ]
+      }
+    },
+    "/api/v1/favorites": {
+      "get": {
+        "description": "현재 사용자의 즐겨찾기를 최근순 **한 페이지**로 반환한다 → 200(로그인 필요, AC2·AC3·AC5 + F).\n\n비활성 룸도 포함하며(AC3 — 행에서 '비활성' 라벨), 각 행에 신선 ``remaining_slots``를 싣는다.\n``created_at`` keyset 페이징(``CursorPage`` 봉투). ``limit``(기본 20·최대 100)·``cursor``는 쿼리,\n손상 커서는 422. 미인증은 401. 즐겨찾기가 없으면 ``items=[]``·``next_cursor=None``(정상 200).",
+        "operationId": "favorites_list_favorites",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_FavoriteRoomItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Favorites",
+        "tags": [
+          "favorites"
+        ]
+      },
+      "post": {
+        "description": "즐겨찾기에 룸을 추가한다 → 201 + FavoriteRoomItem(로그인 필요, AC1·AC4·AC5).\n\n멱등 — 이미 즐겨찾기된 룸이면 기존 행 기준으로 201을 돌려준다(토글 견고성). 미존재 룸은\n404 ``ROOM_NOT_FOUND``, 미인증은 401 ``UNAUTHENTICATED``.",
+        "operationId": "favorites_add_favorite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FavoriteCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoriteRoomItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Favorite",
+        "tags": [
+          "favorites"
+        ]
+      }
+    },
+    "/api/v1/favorites/{room_id}": {
+      "delete": {
+        "description": "즐겨찾기에서 룸을 제거한다 → 204(로그인 필요·멱등, AC1·AC5).\n\n없는 행을 제거해도 204(멱등 — 토글 견고성). 미인증은 401.",
+        "operationId": "favorites_remove_favorite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Favorite",
+        "tags": [
+          "favorites"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "description": "liveness 헬스체크. DB·외부 의존성에 접근하지 않는다(DB readiness는 lifespan에서만 검증).",
+        "operationId": "health_health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Health",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "description": "현재 사용자의 통지를 반환한다 → 200(로그인 필요·읽기전용, AC1·AC3·AC4).\n\n**두 종류를 머지**한다: ① 도래 리마인드(``reminders.due_reminder_reservations`` — 24h 이내\n확정 예약을 **행 없이 도출**, 억제건 제외) ② status_change pending(``service.list_pending``).\n각 항목의 ``room_name``은 라우터가 PK 조회로 합성한다(service rooms import 금지·순환 회피).\n리마인드(``slot_start`` asc·임박순) 먼저, status_change(created_at desc) 다음의 **결정적 순서**.\n``now``는 1회 캡처해 도출 전체에 일관 주입한다. DB 쓰기 0(억제건 조회만). 미인증은 401.",
+        "operationId": "notifications_list_notifications",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationItem"
+                  },
+                  "title": "Response Notifications List Notifications",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "List Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/reminders/{reservation_id}/dismiss": {
+      "post": {
+        "description": "도래 리마인드를 '다시 보지 않기'로 영속 억제한다 → 204(로그인 필요·멱등, AC2).\n\n**소유권 가드 먼저(반복함정 #5·FK 500 회피):** ``session.get(Reservation, id)`` → 미존재이거나\n``booker_id``가 요청자가 아니면 404 ``NOTIFICATION_NOT_FOUND``(타인/미존재 예약 누설 금지 —\n403 아님). 이 가드 없이 ``suppress_reminder``를 바로 부르면 미존재 ``reservation_id``가 FK를\n위반해 raw 500이 된다. 통과 시 ``service.suppress_reminder``(born-dismissed 억제행·멱등)에\n위임한다. 경로 세그먼트 3개라 ``/{notification_id}/dismiss``(2개)와 충돌 없음. 미인증=401.",
+        "operationId": "notifications_dismiss_reminder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dismiss Reminder",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/dismiss": {
+      "post": {
+        "description": "status_change 통지 한 건을 소멸 처리한다 → 204(로그인 필요·멱등, 5.1 AC5).\n\n'확인'(5.3)이 이 generic 엔드포인트를 소비한다. 소유권 검증(타인/미존재=404\n``NOTIFICATION_NOT_FOUND``·누설 금지) + ``dismissed_at`` 설정(멱등 — 이미 소멸이면 no-op)은\n``service.dismiss_notification``에 위임한다. 도래 리마인드 '다시 보지 않기'는 행 id가 없어\n별도 ``/reminders/{reservation_id}/dismiss``를 쓴다(KTH 확정 — 동일 dismiss 메커니즘·다른 키).\n미인증은 401.",
+        "operationId": "notifications_dismiss_notification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dismiss Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/provider/reservations": {
+      "get": {
+        "description": "제공자 소유 룸의 예약을 최근순 **한 페이지**로 반환한다 → 200(provider, AC1·AC2·AC3 + F).\n\n``list_reservations``(예약자 본인 목록, 4.8)의 **거울상** — 소유권 축이 ``booker_id``(본인) →\n``Room.provider_id``(소유 룸)이고, 예약자 식별정보를 **익명 라벨**로 가린다(FR-23 Privacy).\n본인 소유 룸이 없거나 예약이 없으면 빈 리스트(정상 200). 미인증=401,\nbooker/admin=403(``_require_provider``).\n\n**합성(도메인 경계 — architecture.md L354·4.9 순환 회피):**\n\n① ``rooms_service.list_provider_rooms``로 소유 룸을 가져온다(``Room.provider_id`` 필터 — 타\n제공자 룸의 예약은 구조적으로 노출 불가, AC3). 그 결과로 **이름 맵**(``{room.id: room.name}``)을\n만든다(룸 0개면 이후 빈 목록). ② ``service.list_reservations_for_rooms``로 그 룸들의 예약을\n상태 무관·``created_at`` desc로 조회한다(reservations.service는 ``room_ids``만 받고 rooms를\nimport하지 않는다). ③ 각 예약을 ``ProviderReservationItem``으로 매핑 — ``room_name``은 이름\n맵에서(행마다 ``session.get(Room)`` 재조회 금지 = N+1 회피, 소유 룸은 이미 메모리에),\n``booker_label``은 ``booker_display_label(reservation.booker_id)``로 해시 파생한다.\n**``booker_id``는 응답에 싣지 않는다**(AC2 — 이메일·raw UUID 비노출).\n\n슬롯 시간은 ``Reservation.slot_starts`` **스냅샷**(취소/거절 후에도 잔존)을 싣는다.\n다가오는/지난 분류·정렬은 소비처가 ``slot_starts``로 계산한다(서버 flat — 4.8 범위 결정 #3, 소비\nUI는 provider 웹 표면 후속). **읽기 전용**(상태 전이·슬롯 변경 0 — cancel↔reject race는 6.2).",
+        "operationId": "reservations_list_provider_reservations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_ProviderReservationItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Provider Reservations",
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/v1/provider/reservations/{reservation_id}/reject": {
+      "post": {
+        "description": "제공자 본인 소유 룸의 확정 예약을 시작 전까지 거절한다 → 200 + ReservationPublic(AC1~AC5).\n\n6.1 읽기 위의 첫 쓰기(거절) 슬라이스. 분기 순서(중요):\n\n① **소유권 가드(AC5 — 404로 누설 금지):** ``session.get(Reservation, id)`` + 그 예약의 룸을\n``session.get(Room, reservation.room_id)``로 조회해 **본인 소유 룸(`Room.provider_id ==\nprincipal.user_id`)** 인지 확인한다. 미존재 예약·**타 제공자 룸의 예약**·룸 부재는 **동일 404\n``RESERVATION_NOT_FOUND``**(403 아님 — 타인 예약 존재 누설 금지, 4.7 cancel 미러). 룸 소유권은\n라우터가 판정한다(reservations.service는 rooms import 금지 — 4.9 순환 회피, 라우터=조합 계층).\n\n② **게이트 + 거절(+ 통지 원자):** ``service.reject_reservation_for_provider``가 종료 상태면 즉시\n멱등 반환, 아니면 시작 전 게이트(``earliest <= now`` → 409 ``REJECT_WINDOW_PASSED``)를 강제한 뒤\n``reject_reservation``(status flip + 슬롯 DELETE + **예약자 ``status_change``/reason=\n``'rejected'`` 통지가 동일 트랜잭션**)을 호출한다. ``now`` 미주입=실시간(``now_utc``). 게이트는\nservice에 위임한다.\n\n**★통지 원자화(Story 8.3 — deferred L42 회수):** 거절 통지 생성은 이제 **service가 winner\n판정 시 전이 commit과 한 트랜잭션**에서 한다(이전엔 라우터가 거절 *후* 별도 트랜잭션으로\n``create_notification``을 호출해, 통지 실패 시 거절은 영속인데 재시도가 \"이미 종료\"로 통지를\n건너뛰어 영구 손실 위험이 있었다). 라우터의 ``was_confirmed`` 사전 캡처·통지 호출은 제거됐다 —\n통지 결정은 service의 ``rowcount`` winner 판정으로 일원화(race 정확성·retry-safe 둘 다 충족).\n거절 통지가 **생성되는 사실은 6.2와 불변**(배선만 router→service 이동·원자화). 예약자 web 배너\n표시는 5.3이 이미 구축(web 신규 0).\n\n성공·멱등 모두 **200**(생성만 201). 거절 후 점유 슬롯은 비워졌으므로 ``slot_starts=[]``로\n직렬화한다(이미 종료 상태인 멱등 경로도 슬롯 0건이라 동일 — cancel 엔드포인트 미러). 에러코드·\n숫자 상태는 화면에 노출하지 않는다(고정 한국어 ``message``만 — UX-DR10, FE 분기는 detail.code).",
+        "operationId": "reservations_reject_reservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Reservation",
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/v1/reservations": {
+      "get": {
+        "description": "예약자 본인의 예약을 최근순 **한 페이지**로 반환한다 → 200(booker, AC1·AC2·AC4 + F 페이징).\n\n본인(``booker_id == principal.user_id``) 예약만 상태 무관(confirmed/cancelled/rejected)으로\n``created_at`` 내림차순 keyset 페이징한다(``CursorPage`` 봉투 — ``items`` + ``next_cursor``;\n다가오는/지난 분류·6h 취소 가능 판정은 FE가 ``slot_starts`` 스냅샷으로 계산 — 4.7 범위 결정 #3).\n``limit``(기본 20·최대 100)·``cursor``(이전 페이지 토큰)는 쿼리. 손상 커서는 422. 미인증=401,\nprovider/admin=403(``_require_booker``). 예약이 없으면 ``items=[]``·``next_cursor=None``(정상 200).\n\n**룸 이름·is_active 합성은 라우터에서**(``session.get(Room, …)``): reservations.service가\nrooms를 import하면 4.9 ``rooms.service → reservations.service``(차감) 역방향과 **순환 import**가\n되므로, service는 ``reservations`` 테이블만 만지고 룸 메타 합성은 조합 계층인 라우터가\n한다(``rooms.models`` import는 router 한정 = service↔service 순환 아님 — favorites\n``build_favorite_item`` 선례). 슬롯 시간은 ``Reservation.slot_starts`` **스냅샷**(취소/거절\n후에도 잔존 — 범위 결정 #1)을 싣는다.\n\n**``has_review`` 합성(Story 5.5 — 후기 작성 게이팅):** ``reviews.service``의\n``reservation_ids_with_review``를 **단일 호출**(N+1 금지)해 본인 후기 존재 예약 집합을 구하고\n각 항목에 ``has_review = reservation.id in ids``를 싣는다. reservations.router →\nreviews.service **단방향**(라우터=조합 계층, room_name 합성과 동형 — service↔service 순환 아님:\nreviews.service는 reservations를 import하지 않는다).",
+        "operationId": "reservations_list_reservations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_ReservationListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Reservations",
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/v1/reservations/{reservation_id}/reviews": {
+      "post": {
+        "description": "이용 완료한 본인 예약에 별점+텍스트 후기를 작성한다 → 201 + ReviewPublic(booker, AC1~AC3).\n\n① **소유권 가드(AC3):** ``session.get(Reservation, id)`` → 미존재이거나 ``booker_id``가\n요청자가 아니면 **404 ``RESERVATION_NOT_FOUND``**. 타인 예약을 403이 아니라 404로 막아 **존재\n여부를 누설하지 않는다**(reservations cancel 패턴 미러). 미인증=401·provider/admin=403은\n``_require_booker``. ② **자격·중복은 service:** 이용 완료 아님(취소/거절/미완료) → 409\n``RESERVATION_NOT_COMPLETED``, 이미 작성 → 409 ``REVIEW_ALREADY_EXISTS``. 입력 형식(별점 범위·\n텍스트 길이)은 ``ReviewCreateRequest``가 선차단(422). room_id는 예약에서 도출한다(경로 불요).",
+        "operationId": "reviews_create_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}/reply": {
+      "post": {
+        "description": "제공자가 자기 룸 후기에 답글을 단다 → 201 + ReviewReplyPublic(provider, 5.6 AC1·AC2·AC3·AC4).\n\n① **후기 존재(AC2):** ``session.get(Review, id)`` → 미존재면 **404 ``REVIEW_NOT_FOUND``**.\n② **소유권(AC2):** 후기의 룸(``session.get(Room, review.room_id)``)이 요청자 소유가 아니면\n**403 ``REVIEW_REPLY_FORBIDDEN``** — 후기·룸은 공개 데이터라 존재 누설이 무관하고 epic AC가\n명시 403을 요구한다(booker 도메인의 404 비노설과 의도적 분기). 라우터=조합 계층이 ``Room``을\n조회한다(reviews.service는 ``Room``을 만지지 않음 — 순환 금지, 반복 함정 #3). ③ **중복은\nservice:** 이미 답글이 달린 후기 → 409 ``REVIEW_REPLY_ALREADY_EXISTS``. 미인증=401·\nbooker/admin=403 ``FORBIDDEN_ROLE``은 ``_require_provider``. 텍스트 형식은\n``ReviewReplyCreateRequest`` 선차단(422). room_id는 후기에서 도출(경로 불요). 비활성\n룸이라도 본인 룸이면 허용(자기 데이터).",
+        "operationId": "reviews_create_reply",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewReplyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewReplyPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Reply",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "description": "활성 룸의 핀 메타(``{room_id, name, lat, lng}``)를 반환한다 → 200(공개, AC1·AC2).\n\n첫 진입 지도 핀 좌표 공급(FR-4). **인증 없음**(탐색 첫 화면 핀은 비로그인 — PRD §FR-2,\n``/availability``와 동일 근거). 가용성(핀 색)은 ``/availability``, 룸 상세는 바텀시트\n(Story 3.3)가 책임진다 — 이 응답은 핀 좌표·이름만 싣는다(과조회 방지). 컬렉션 루트\n``GET \"\"``는 ``POST \"\"``(등록·메서드 다름)·``GET /{room_id}``(동적·경로 세그먼트 다름)와\n충돌하지 않으나, 일관성을 위해 정적 그룹 근처·``PATCH /{room_id}`` 앞에 선언한다.\noperationId = ``rooms_list_rooms``(1.9 규약, 도메인 내 유일).",
+        "operationId": "rooms_list_rooms",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoomMapItem"
+                  },
+                  "title": "Response Rooms List Rooms",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Rooms",
+        "tags": [
+          "rooms"
+        ]
+      },
+      "post": {
+        "description": "공간을 등록한다 → 201 + RoomPublic(provider 전용, AC1·AC5).\n\n인증된 provider의 ``user_id``를 ``provider_id``로 ``create_room`` 호출. 제공자당 1개\n초과는 409, 자정 넘김 영업시간 등 검증 실패는 422(Pydantic→1.5 핸들러).",
+        "operationId": "rooms_create_room",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Room",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/availability": {
+      "get": {
+        "description": "활성 룸별 오늘 잔여 빈 슬롯 수를 반환한다 → 200(공개, AC1·AC3).\n\n핀 색 결정용 집계(FR-5·NFR-2) — 서버가 1회 계산해 ``list[RoomAvailability]``(각\n``{room_id, remaining_slots}``)를 돌려준다. **인증 없음**(탐색 첫 화면 핀은 비로그인 —\nPRD §FR-2). ``now`` 미주입 → ``now_utc()`` 기준. 정적 경로라 ``/{room_id}``보다 먼저 선언한다.",
+        "operationId": "rooms_aggregate_availability",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoomAvailability"
+                  },
+                  "title": "Response Rooms Aggregate Availability",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Aggregate Availability",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/geocode": {
+      "get": {
+        "description": "주소를 검색해 좌표·지역 코드 후보를 반환한다 → 200(provider 전용, AC2).\n\n카카오 REST 키는 백엔드 전용(NFR-6)이라 이 프록시를 경유한다. 업스트림 실패는 502.\n결과 0건은 정상(빈 리스트). 정적 경로라 향후 ``/{room_id}``보다 먼저 선언한다.",
+        "operationId": "rooms_geocode_address",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Query",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GeocodeResult"
+                  },
+                  "title": "Response Rooms Geocode Address",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "summary": "Geocode Address",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/mine": {
+      "get": {
+        "description": "provider 본인 룸 상세를 반환한다 → 200(provider 전용 — 등록/수정 폼 prefill).\n\n인증된 provider의 ``user_id``로 본인 룸(0..1)을 조회한다. 없으면 404 ``ROOM_NOT_FOUND``\n(등록 안 함 → 폼 생성 모드). 정적 경로라 동적 ``/{room_id}``보다 **먼저** 선언한다(미선언 시\n\"mine\"이 room_id로 잡혀 422). booker/admin은 403, 미인증 401(``_require_provider``).",
+        "operationId": "rooms_get_my_room",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderRoomDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Get My Room",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/regions": {
+      "get": {
+        "description": "활성 룸이 있는 시/군/구→동/읍/면 콤보 트리를 반환한다 → 200(공개, AC1).\n\n지역 콤보(1차 시군구·2차 동) 데이터 공급. 보유 룸의 지역 b_code를 백엔드 번들 참조에\n조인해 라벨·필터 목록을 구성한다(룸이 있는 지역만). **인증 없음**(탐색은 비로그인 —\nPRD §FR-2, ``/availability``·``GET \"\"``와 동일 근거). 정적 경로라 동적 ``/{room_id}``보다\n**먼저 선언**한다(미선언 시 \"regions\"가 room_id로 잡혀 422). operationId =\n``rooms_list_regions``(1.9, 도메인 유일).",
+        "operationId": "rooms_list_regions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RegionGroup"
+                  },
+                  "title": "Response Rooms List Regions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Regions",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/search": {
+      "get": {
+        "description": "선택 지역/반경(또는 전체)의 활성 룸을 신선 슬롯과 함께 **한 페이지** 반환 → 200(공개·AC1·AC4 + F).\n\n목록 행(이름·가격·룸형태·부대시설 + 예약 가능 배지용 신선 ``remaining_slots``). 두 검색방식:\n\n- **지역(3.4):** ``region_code`` 미지정=지역 필터 없음, 지정=시군구/동 레벨 코드로 필터.\n- **반경(3.5):** ``lat``·``lng``가 **둘 다** 있을 때만 반경 필터 적용(부분 좌표=미적용).\n  ``radius_km`` 미지정 시 기본 3km, 결과는 가까운 순 정렬. ``region_code``와 동시=교집합.\n\n**페이징(F):** 거리/지역 계산 정렬이라 **offset 커서**(``CursorPage`` 봉투 — ``items`` +\n``next_cursor``). ``limit``(기본 20·최대 100)·``cursor``는 쿼리, 손상/음수 커서는 422.\n**미매핑/미존재 region_code=빈 페이지 200**(에러 계약 없음 — graceful). 범위 밖 파라미터\n(``lat∉[-90,90]``·``lng∉[-180,180]``·``radius_km≤0`` 또는 50 초과)=**422**(Query 검증→1.5).\n**인증 없음**(탐색은 비로그인 — PRD §FR-2). 정적 경로라 ``/{room_id}``보다 **먼저 선언**한다.\noperationId = ``rooms_search_rooms``(1.9, 도메인 유일).",
+        "operationId": "rooms_search_rooms",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "region_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lat",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 90,
+                  "minimum": -90,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lat"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lng",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 180,
+                  "minimum": -180,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lng"
+            }
+          },
+          {
+            "in": "query",
+            "name": "radius_km",
+            "required": false,
+            "schema": {
+              "default": 3.0,
+              "exclusiveMinimum": 0,
+              "maximum": 50,
+              "title": "Radius Km",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_RoomListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Search Rooms",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}": {
+      "get": {
+        "description": "단일 룸 신선 요약(바텀시트, Story 3.3) → 200(공개, AC1·AC4).\n\n가격·수용·룸형태·부대시설·영업시간 + ``derive_slots`` 재사용한 **신선 ``remaining_slots``**.\n**인증 없음**(탐색 첫 화면 핀 탭 — PRD §FR-2, ``/availability``·``GET \"\"``와 동일 근거).\n미존재/비활성=404 ``ROOM_NOT_FOUND``. ``provider_id`` 미노출(공개·과조회 방지). 동적 라우트라\n정적 경로 뒤·``PATCH /{room_id}`` 근처 선언. operationId = ``rooms_get_room``(1.9, 도메인 유일).\n4.2 상세 화면이 이 엔드포인트를 후기/예약 UI로 확장한다.",
+        "operationId": "rooms_get_room",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Room",
+        "tags": [
+          "rooms"
+        ]
+      },
+      "patch": {
+        "description": "본인 소유 공간을 부분 수정한다 → 200 + RoomPublic(provider 전용, AC1·AC4·AC5).\n\n``model_dump(exclude_unset=True)`` 부분 수정(PATCH 시맨틱) — 미제공 필드는 불변,\n``business_hours`` 제공 시 전체 교체. 소유권은 **서비스에서 최종 강제**(타인/미존재\nroom_id는 404 ``ROOM_NOT_FOUND``로 합침). 자정 넘김·범위 밖 값 등 검증 실패는 422.\noperationId = ``rooms_update_room``(1.9 규약, 도메인 내 유일).",
+        "operationId": "rooms_update_room",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update Room",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}/reservations": {
+      "post": {
+        "description": "선택한 빈 연속 슬롯을 결제 없이 즉시 확정한다 → 201 + ReservationPublic(booker, AC1·AC2).\n\n① 신선 재검증: 요청 슬롯의 ROOM_TZ 날짜에 대해 ``get_room_slots``(4.3 — ``derive_slots`` 재사용)\n로 가용 슬롯 집합을 구하고 ``요청 ⊆ 가용``을 확인한다(룸 미존재/비활성은 그 호출의 404 가드).\n위반(stale·과거·영업시간외·휴무)은 409 ``SLOT_CONFLICT``. ② 확정: 4.1 ``create_reservation``으로\n예약 단위 1건 + 슬롯 점유 행을 단일 트랜잭션 all-or-nothing 생성(이미 점유된 슬롯은 UNIQUE가\n최종 차단 → 409). 입력 형식 위반(빈/naive/중복/교차일)은 스키마가 선차단(422).",
+        "operationId": "reservations_create_reservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Reservation",
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}/reservations/{reservation_id}/cancel": {
+      "post": {
+        "description": "예약자 본인 확정 예약을 취소한다 → 200 + ReservationPublic(status cancelled, AC1~AC4).\n\n분기 순서(중요):\n\n① **소유권 가드(AC4):** ``session.get(Reservation, id)`` → 미존재이거나 ``booker_id``가\n요청자가 아니거나 경로 ``room_id``와 불일치면 **404 ``RESERVATION_NOT_FOUND``**. 타인 예약을\n403이 아니라 404로 막아 **타인 예약 존재 여부를 누설하지 않는다**(2.3 ``ROOM_NOT_FOUND`` 패턴\n미러 — 미존재와 비-소유를 동일 404로 합침). 미인증=401·provider/admin=403은 ``_require_booker``.\n\n② **게이트 + 취소:** ``service.cancel_reservation_for_booker``가 종료 상태면 즉시 멱등 반환,\n아니면 6h 윈도우(``< 6시간`` → 409 ``CANCEL_WINDOW_PASSED``)를 강제한 뒤 4.1\n``cancel_reservation``(status flip + 슬롯 DELETE 단일 트랜잭션)을 호출한다. 6h 게이트는\n**service에 위임**한다.\n\n성공·멱등 모두 **200**(생성만 201). 취소 후 점유 슬롯은 비워졌으므로 ``slot_starts=[]``로\n직렬화한다(이미 종료 상태인 멱등 경로도 슬롯이 0건이라 동일). 에러코드·숫자 상태는 화면에\n노출하지 않는다(고정 한국어 ``message``만 — UX-DR10, FE 분기는 4.8 ``detail.code``).",
+        "operationId": "reservations_cancel_reservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Reservation",
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}/reviews": {
+      "get": {
+        "description": "룸 상세의 후기를 최신순 **한 페이지**로 반환한다 → 200(공개·무인증, AC4 + F 페이징).\n\n룸 상세는 공개 표면(``GET /rooms/{id}`` 동일 근거 — PRD §FR-2)이라 **인증 없음**. 각 후기는\n**별점·텍스트·작성일만**(작성자 식별 미노출 — KTH 결정 1 익명). ``created_at`` keyset 페이징\n(``CursorPage`` 봉투). ``limit``(기본 20·최대 100)·``cursor``는 쿼리, 손상 커서는 422. 후기가\n없으면 ``items=[]``·``next_cursor=None``(정상 200 — 막다른 화면 금지는 FE 빈 상태 카피).\n미존재/비활성 룸도 빈/기존 목록을 낸다(후기는 공개 데이터, 상세 404와 분리).",
+        "operationId": "reviews_list_room_reviews",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_ReviewListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Room Reviews",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}/slots": {
+      "get": {
+        "description": "활성 룸의 ``date``(ROOM_TZ) 1시간 슬롯을 상태별로 + 다음 빈 날짜를 반환한다 → 200(공개, AC1).\n\n그날 1시간 슬롯을 상태별(``available`` 가용/``past`` 지난 시간/``reserved`` 예약됨)로,\n그리고 그날 다음부터 30일 내 첫 빈 날(``next_available_date``)을 함께 싣는다. ``derive_slots``\n(2.1) 재사용 — ``reserved`` 상태는 **Story 4.9 예약 차감 연결 전까지 미발생**. **인증 없음**\n(상세·슬롯은 비로그인 — PRD §FR-2, ``GET /{room_id}``와 동일 근거). 미존재/비활성=404\n``ROOM_NOT_FOUND``. ``date`` 누락/오형식=422(Query 파싱→1.5 핸들러).\n\n**라우팅 순서:** ``/{room_id}/slots``는 2-세그먼트라 정적 ``/geocode``·``/availability``·\n``/regions``·``/search``·``GET \"\"`` 및 1-세그먼트 동적 ``/{room_id}``와 충돌하지 않는다(경로\n깊이 다름) — 동적 ``/{room_id}`` 그룹 근처에 둔다. operationId = ``rooms_get_room_slots``(1.9,\n도메인 유일) → SDK ``roomsGetRoomSlots``.",
+        "operationId": "rooms_get_room_slots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSlotsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Room Slots",
+        "tags": [
+          "rooms"
+        ]
+      }
+    }
+  }
+}

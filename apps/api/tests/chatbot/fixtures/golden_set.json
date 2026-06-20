@@ -1,0 +1,65 @@
+{
+  "_comment": "Story 7.5 SM-7 골든셋(7.7에서 c 분기 단언 완성 + 거절가드 과적용 near-boundary 추가). branch: answer=근거 있음(문서 기반 답변), unknown=범위 내·근거 없음(모름 안내), out_of_scope=범위 밖(서비스 무관 — 툴 미호출·정중한 거절 카피, 7.7에서 단언함). expect_keywords=답변에 포함되어야 할 근거 키워드(answer 분기). '노쇼가 뭐예요?'는 일반상식형으로 보이나 서비스 규정 질문 — 거절 가드가 정상 범위를 거절로 오라우팅하면 근거 키워드 누락으로 answer arm이 실패한다(과적용 회귀 가드, 7.7 리뷰 D2). 룸 가격 산술 near-boundary는 예약검색(라이브 룸 의존)이라 프롬프트 카브아웃으로 처리·골든 미단언.",
+  "items": [
+    {
+      "question": "예약을 취소하면 환불되나요? 언제까지 취소할 수 있어요?",
+      "branch": "answer",
+      "expect_keywords": ["6시간"],
+      "source": "policy.md"
+    },
+    {
+      "question": "노쇼가 뭐예요? 노쇼하면 불이익이 있나요?",
+      "branch": "answer",
+      "expect_keywords": ["제한"],
+      "source": "policy.md"
+    },
+    {
+      "question": "스터디룸은 어떻게 들어가나요?",
+      "branch": "answer",
+      "expect_keywords": ["입실 코드"],
+      "source": "usage.md"
+    },
+    {
+      "question": "즐겨찾기는 어떻게 추가해요?",
+      "branch": "answer",
+      "expect_keywords": ["별 아이콘"],
+      "source": "faq.md"
+    },
+    {
+      "question": "스터디룸 주차 요금은 얼마인가요?",
+      "branch": "unknown",
+      "expect_keywords": [],
+      "source": null
+    },
+    {
+      "question": "예약할 때 신분증을 꼭 지참해야 하나요?",
+      "branch": "unknown",
+      "expect_keywords": [],
+      "source": null
+    },
+    {
+      "question": "오늘 서울 날씨 어때?",
+      "branch": "out_of_scope",
+      "expect_keywords": [],
+      "source": null
+    },
+    {
+      "question": "재미있는 농담 하나 해줘.",
+      "branch": "out_of_scope",
+      "expect_keywords": [],
+      "source": null
+    },
+    {
+      "question": "123 곱하기 456은 얼마야?",
+      "branch": "out_of_scope",
+      "expect_keywords": [],
+      "source": null
+    },
+    {
+      "question": "대한민국 수도는 어디야?",
+      "branch": "out_of_scope",
+      "expect_keywords": [],
+      "source": null
+    }
+  ]
+}

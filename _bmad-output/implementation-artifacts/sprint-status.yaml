@@ -1,0 +1,145 @@
+# generated: 2026-06-14
+# last_updated: 2026-06-17 (5-2 create-story → ready-for-dev)
+# project: desknow
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-06-14
+last_updated: 2026-06-20  # Epic 9 마감(9-1~9-4 done·epic-9 done·경량회고 done); MVP 스토리 단계 종료 → 배포 준비(실기기 재검증 선결)
+project: desknow
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # ── Epic 1: 기반 골격 & 계정/인증 ──
+  epic-1: done
+  1-1-외부-서비스-가입-사전-설정-선행-사람이-직접-수행: done
+  1-2-모노레포-멀티-서피스-골격-스캐폴드: done
+  1-3-phase-0-검증-스파이크: done
+  1-4-데이터베이스-연결-마이그레이션-기반: done
+  1-5-횡단-유틸-시간-규약-표준-에러-스키마: done
+  1-6-디자인-토큰-ui-셸: done
+  1-7-이메일-회원가입: done
+  1-8-로그인-로그아웃-세션-유지-rbac: done
+  1-9-openapi-ts-sdk-자동생성-파이프라인: done
+  epic-1-retrospective: done  # 2026-06-15 retro 완료(epic-1-retro-2026-06-15.md); 정책변경=deferred 트리거 시 의무 회수·반복함정 프리플라이트
+
+  # ── Epic 2: 제공자 공간 등록 ──
+  epic-2: done
+  2-1-rooms-데이터-모델-영업시간-휴무-모델: done
+  2-2-공간-등록-주소-검색: done
+  2-3-공간-수정-영업시간-변경-독립성: done
+  epic-2-retrospective: optional  # skipped (경량 처리)
+
+  # ── Epic 3: 스터디룸 탐색 (지도·목록·즐겨찾기) ──
+  epic-3: done  # 2026-06-16 3-1~3-9 전부 done → 수동 전환(파일 규칙)
+  3-1-슬롯-도출-룸-가용성-집계-엔드포인트: done
+  3-2-첫-진입-지도-주변-핀-가용성-색-아이콘: done
+  3-3-바텀시트-요약: done
+  3-4-행정동-콤보-목록-조회: done
+  3-5-반경-검색: done
+  3-6-위치-권한-거부-우회: done
+  3-7-즐겨찾기-추가-조회: done
+  3-8-탐색-상태-매트릭스-마감: done
+  3-9-첫-방문-온보딩-소개-오버레이: done
+  epic-3-retrospective: optional  # skipped (경량 처리)
+
+  # ── Epic 4: 예약 핵심 (상세·슬롯·즉시예약·취소·현황) ──
+  epic-4: done  # 2026-06-17 4-1~4-9 전부 done → 수동 전환(파일 규칙)
+  4-1-reservations-데이터-모델-동시성-제약-상태머신: done
+  4-2-상세-정보-화면: done
+  4-3-날짜-슬롯-가용성-표시: done
+  4-4-연속-슬롯-선택: done
+  4-5-즉시-예약-결제-없음: done
+  4-6-중복-예약-방지-동시성: done
+  4-7-예약-취소: done
+  4-8-예약현황-히스토리-예약자: done
+  4-9-가용성-집계에-예약-차감-연결: done
+  epic-4-retrospective: optional  # skipped (경량 처리)
+
+  # ── Epic 5: 예약 후 경험 (알림·공유·후기) ──
+  epic-5: done  # 2026-06-17 5-1~5-6 전부 done → 수동 전환(파일 규칙)
+  5-1-notifications-모델-인앱-배너-인프라: done
+  5-2-예약-도래-리마인드-배너: done
+  5-3-예약-상태변경-통지-배너: done
+  5-4-카카오톡-예약-공유: done
+  5-5-후기-작성: done
+  5-6-후기-답글-제공자: done
+  epic-5-retrospective: done  # 2026-06-17 경량 처리(epic-5-retro-2026-06-17.md); ★Epic6 2c=cancel↔reject race·reader status필터를 6.2에서 의무 회수
+
+  # ── Epic 6: 제공자 예약 관리 (조회·거절) ──
+  epic-6: done  # 2026-06-17 6-1·6-2 전부 done → 수동 전환(파일 규칙)
+  6-1-예약현황-조회-제공자: done
+  6-2-예약-거절: done
+  epic-6-retrospective: done  # 2026-06-17 경량 처리(epic-6-retro-2026-06-17.md); ★2c 의무회수(cancel↔reject race=조건부UPDATE 소스검증·reader필터=DELETE경로 미트리거) 검증완료; ★8.3=통지 비원자 재시도손실 회수 후보
+
+  # ── Epic 7: 챗봇 "룸메이트" (RAG·예약 검색·멀티 LLM·스트리밍) ──
+  epic-7: done  # 2026-06-18 7-1~7-7 전부 done → 수동 전환(파일 규칙)
+  7-1-멀티-llm-어댑터-레이어: done
+  7-2-문서-인제스트-파이프라인-pgvector: done
+  7-3-플로팅-챗봇-진입-세션-대화-유지: done
+  7-4-응답-스트리밍: done
+  7-5-서비스-안내-문서-rag: done
+  7-6-자연어-예약-검색-예약-db-툴: done
+  7-7-범위-밖-질문-거절: done
+  epic-7-retrospective: done  # 2026-06-18 경량 처리(epic-7-retro-2026-06-18.md); ★SSE 프레이밍 의무회수 완료·LangGraph 롤백 추적체인 종료(7.7)·골든셋 라이브 검증=전용 TEST_DATABASE_URL 부재로 미실행(코드만 존재); 8.4=ToolNode 에러정책+stale청크 GC 합류 후보
+
+  # ── Epic 8: 운영 (시드 관리자) ──
+  epic-8: done  # 2026-06-18 8-1~8-4 전부 done·웹/백엔드 MVP 종료; 단 모바일 패리티=Epic 9 분리·배포 전 선결(correct-course 2026-06-19)
+  8-1-관리자-웹-셸-시드-관리자-접근: done
+  8-2-계정-비활성-캐스케이드: done  # 2026-06-18 code-review: patch 0·defer 4(E8 토큰무효화·8.3 캐스케이드통지·role enum·AC3 통합테스트)
+  8-3-예약-임의-취소: done
+  8-4-챗봇-문서-인제스트-관리: done  # 2026-06-18 code-review: patch 3(delete_orphans 빈가드·인제스트패널 상태리셋·Task7 참조오기) 적용·defer 2(orphan-GC 안전플로어·인제스트 레이트리밋/감사로그)
+  epic-8-retrospective: done  # 2026-06-18 경량 처리(epic-8-retro-2026-06-18.md); 의무회수 3건 완수(L42 통지원자화·L344 stale청크·L29 ToolNode)·재-defer 0; ★전용 TEST_DATABASE_URL 라이브검증=배포버킷 선결; MVP 스토리단계 종료→배포 단계
+
+  # ── Epic 9: 모바일 앱 화면 패리티 (correct-course 2026-06-19 신설) ──
+  epic-9: done  # 2026-06-20 9-1~9-4 전부 done → 수동 전환(파일 규칙); 검증=웹 vs Expo Web 한정·실기기 재검증 사람-확인-필수
+  9-1-모바일-인증-탐색-검색: done  # 파운데이션 포함: secure-store+Bearer 인증·WebView 카카오맵·E2E 주입 하니스 (code-review: SessionKeeper 포팅 회수)
+  9-2-모바일-예약-예약후경험: done  # code-review 통과(차단성 0·patch1 a11y적용·defer6 Low) → 9-2 md Review Findings
+  9-3-모바일-provider-챗봇-e2e: done  # 2026-06-19 code-review: patch2 적용(401 abort 가드·SSE idle 워치독)·defer4·기각14·차단성0·SSE 프록시 root-cause=배포 사람확인 필수(deferred-work)
+  9-4-모바일-시각-패리티-정정: done  # 2026-06-20 code-review 통과(차단성0·patch1=AuthBottomNav 역할인지·defer6) → 9-4 md Review Findings (⚠️실기기 재검증=사람-확인-필수)
+  epic-9-retrospective: done  # 2026-06-20 경량 처리(epic-9-retro-2026-06-20.md); 근본원인=포트정체 미확인(거짓done)·이월=실기기 재검증
+
+# ── 포스트-MVP 수정사항 (전 에픽 done 이후 · 배포 전 완성도/폴리시 보강, 2026-06-19) ──
+# 스토리 단위 아님 — 폴리시·버그수정·운영데이터. 각 항목=상태+한줄+포인터(스토리 정식반영은 별도 defer).
+post_epic_changes:
+  provider-웹-표면-구축: done  # 가입 role선택·룸폼·예약자현황·후기·역할네비 — handoff-2026-06-19.md
+  용어-지역-통일-및-탐색-ux: done  # "지역" 전수치환+규칙(루트 CLAUDE.md)·온보딩 비영속닫기·SegmentedControl·거부/답글 실검증 — handoff-2026-06-19-session3.md
+  provider-역할-가드-1룸-409: done  # ProviderGuard(/provider/* 리다이렉트)·1룸초과 친절 409 — handoff-2026-06-19-session4.md
+  f-목록-커서-페이징-무한스크롤: done  # 백엔드 5경로 CursorPage(limit/cursor)·웹 6표면 useInfiniteQuery+sentinel — handoff-2026-06-19-session5.md
+  모바일-인터랙션-수정: done  # 하단네비 backdrop-filter 컨테이닝블록·온보딩X z-index·지도 relayout/내반경 축척리셋·위치칩 깜빡임 — handoff-2026-06-19-session6.md
+  admin-ui-수정: done  # 하이드레이션 suppressHydrationWarning·사이드바 풀하이트(min-h-[100dvh]) — handoff-2026-06-19-session6.md
+  운영-시드-정비: done  # 전계정 비번 Test1234! 통일(+.env·reset_all_passwords.py)·서울 분산 provider+룸 22개 — handoff-2026-06-19-session6.md
+  rag-운영문서-보강: done  # docs_corpus sample→service_guide.txt 운영보강·재인제스트·챗봇 RAG 검증 — handoff-2026-06-19-session6.md
+  admin-변이-실검증: done  # 인제스트·예약 임의취소·계정 비활성 캐스케이드 일회용데이터 end-to-end 검증 — handoff-2026-06-19-session6.md

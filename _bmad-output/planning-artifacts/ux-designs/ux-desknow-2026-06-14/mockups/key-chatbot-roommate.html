@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeskNow — 챗봇 룸메이트</title>
+<style>
+/* Governing spine: EXPERIENCE.md → 챗봇 "룸메이트"(3분기 응답·상위 3개+더보기·스트리밍·세션), Component Patterns(플로팅 챗봇), State Patterns(챗봇 빈 상태=제안 칩·첫 토큰 ≤2초 타이핑 인디케이터), Voice and Tone(친근한 해요체), Key Flows UJ-4. DESIGN.md → Colors, Components(카드 플랫), Elevation. */
+:root{
+  --primary:#FF8A1E; --primary-foreground:#3A2400; --secondary:#FFF0D6; --accent:#FFC24D;
+  --background:#FFFCF4; --card:#FFFFFF; --foreground:#28200F; --muted:#F4EDDF;
+  --muted-foreground:#7A6E55; --border:#F4E2C2; --destructive:#E03A2E; --success:#19A65A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#E9E6DC;font-family:"Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;display:flex;justify-content:center;align-items:flex-start;padding:24px;color:var(--foreground);}
+.phone{width:390px;height:844px;background:var(--background);border-radius:28px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;flex-shrink:0;}
+
+.header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.header .av{width:38px;height:38px;border-radius:9999px;background:var(--primary);color:var(--primary-foreground);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.header .name{font-size:16px;font-weight:700;}
+.header .status{font-size:11px;color:var(--success);font-weight:600;}
+.header .close{margin-left:auto;font-size:20px;color:var(--muted-foreground);}
+
+.chat{flex:1;overflow:hidden;padding:18px 16px;display:flex;flex-direction:column;gap:14px;}
+
+/* greeting (assistant) */
+.msg{max-width:84%;font-size:15px;line-height:1.6;}
+.bot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:11px 14px;}
+.user{align-self:flex-end;background:var(--primary);color:var(--primary-foreground);border-radius:14px 14px 4px 14px;padding:11px 14px;font-weight:500;}
+
+/* suggestion chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start;}
+.chip{background:var(--secondary);color:var(--primary-foreground);border:1px solid var(--border);border-radius:9999px;padding:8px 13px;font-size:13px;font-weight:500;}
+
+/* room cards (top 3) */
+.cards{align-self:flex-start;width:100%;display:flex;flex-direction:column;gap:8px;}
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:center;}
+.rcard .thumb{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--secondary),var(--accent));flex-shrink:0;}
+.rcard .info{flex:1;min-width:0;}
+.rcard .info .t{font-size:14px;font-weight:600;}
+.rcard .info .m{font-size:12px;color:var(--muted-foreground);margin-top:2px;}
+.rcard .badge{display:inline-flex;align-items:center;gap:4px;background:var(--success);color:#fff;border-radius:9999px;padding:3px 8px;font-size:11px;font-weight:600;flex-shrink:0;}
+.more{align-self:flex-start;background:transparent;border:1px solid var(--border);color:var(--primary-foreground);border-radius:9999px;padding:7px 14px;font-size:13px;font-weight:600;font-family:inherit;}
+
+/* streaming caret */
+.caret{display:inline-block;width:2px;height:1em;background:var(--primary);vertical-align:-2px;margin-left:1px;}
+
+/* typing indicator */
+.typing{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:13px 16px;display:flex;gap:5px;}
+.typing i{width:7px;height:7px;border-radius:9999px;background:var(--muted-foreground);opacity:.5;display:inline-block;}
+.typing i:nth-child(2){opacity:.75;}
+.typing i:nth-child(3){opacity:1;}
+
+/* input bar */
+.inputbar{flex-shrink:0;border-top:1px solid var(--border);padding:12px 16px 20px;display:flex;gap:10px;align-items:center;}
+.inputbar .field{flex:1;background:var(--card);border:1px solid var(--border);border-radius:9999px;height:44px;display:flex;align-items:center;padding:0 16px;font-size:14px;color:var(--muted-foreground);}
+.inputbar .send{width:44px;height:44px;border-radius:9999px;background:var(--primary);color:var(--primary-foreground);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span></span><span>●●● ▼ ■</span></div>
+
+  <div class="header">
+    <div class="av">💬</div>
+    <div><div class="name">룸메이트</div><div class="status">● 답할 준비됐어요</div></div>
+    <span class="close">✕</span>
+  </div>
+
+  <div class="chat">
+    <!-- 해요체 greeting -->
+    <div class="msg bot">안녕하세요! 스터디룸 찾기랑 예약, 환불 같은 궁금한 점 뭐든 물어보세요 🙂</div>
+
+    <!-- suggestion chips -->
+    <div class="chips">
+      <span class="chip">환불 규정?</span>
+      <span class="chip">강남 오후 3시 빈 방</span>
+    </div>
+
+    <!-- user question -->
+    <div class="msg user">강남 근처 오후 3시 빈 방 추천해줘</div>
+
+    <!-- streaming assistant reply -->
+    <div class="msg bot">강남에서 오늘 오후 3시에 비어 있는 방을 찾아봤어요. 가까운 순으로 세 곳 골라드릴게요<span class="caret"></span></div>
+
+    <!-- top-3 room cards -->
+    <div class="cards">
+      <div class="rcard">
+        <div class="thumb"></div>
+        <div class="info"><div class="t">강남 스터디라운지</div><div class="m">8,000원/시간 · 도보 4분</div></div>
+        <span class="badge">✓ 가능</span>
+      </div>
+      <div class="rcard">
+        <div class="thumb"></div>
+        <div class="info"><div class="t">역삼 포커스룸</div><div class="m">8,000원/시간 · 도보 7분</div></div>
+        <span class="badge">✓ 가능</span>
+      </div>
+      <div class="rcard">
+        <div class="thumb"></div>
+        <div class="info"><div class="t">역삼 데스크</div><div class="m">8,000원/시간 · 도보 9분</div></div>
+        <span class="badge">✓ 가능</span>
+      </div>
+    </div>
+    <button class="more">더보기</button>
+
+    <!-- typing indicator -->
+    <div class="typing"><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="inputbar">
+    <div class="field">메시지를 입력해보세요</div>
+    <div class="send">↑</div>
+  </div>
+</div>
+</body>
+</html>

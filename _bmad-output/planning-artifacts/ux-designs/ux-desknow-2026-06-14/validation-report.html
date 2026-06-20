@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<!--
+  UX Design Validation Report — DeskNow 스파인 페어 검증 종합본.
+  rubric 워커 + 접근성 리뷰어 보고서를 합본. 전체 등급(letter grade) 없음 —
+  카테고리별 verdict + 심각도 집계가 사실을 말한다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>UX Design Validation: DeskNow (ux-desknow-2026-06-14)</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .badge-status {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+  }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="title">
+        <h1>DeskNow — UX Design Validation Report</h1>
+        <div class="subtitle">DESIGN.md &middot; EXPERIENCE.md (ux-desknow-2026-06-14)</div>
+      </div>
+    </header>
+
+    <div class="synthesis">
+      <p>DeskNow 스파인 페어는 본질적으로 <strong>strong-to-adequate</strong>이며 소비자 출시 수준의 실체를 갖췄다: 모든 PRD UJ가 주인공이 등장하는 Key Flow(클라이맥스 + 실패 경로)로 실현돼 있고, 상태 매트릭스는 N/A 사유를 명시한 채 빠짐없이 채워졌으며, 모든 DESIGN 토큰과 prose의 <code>{token}</code> 참조가 해석되고, 제품 특화 계약(동시성·타임존·챗봇)이 전용 섹션에 커밋돼 다운스트림 아키텍처/스토리 개발이 그대로 source-extract할 수 있다. 완벽하게 깨끗한 source-extraction을 막는 실제 결함은 둘이다: EXPERIENCE.md가 참조하는 <code>{elevation.sheet}</code> / <code>{elevation.fab}</code>가 DESIGN frontmatter의 어떤 토큰으로도 <strong>해석되지 않으며</strong>(elevation은 prose + 리터럴 컴포넌트 문자열로만 존재), 비주얼 레퍼런스 계약이 <strong>공허하다</strong> — 두 스파인 모두 존재하지 않는 <code>mockups/</code> HTML을 가리키고, 작동하는 유일한 파일은 화면 목업이 전혀 아닌 컬러 팔레트 HTML뿐이다.</p>
+      <p>추가 리뷰어(접근성)가 그림을 바꾼다. 스파인의 a11y <em>의도</em>는 동급 최고 수준이지만 — 색-단독 신호 금지를 토큰 노트와 Accessibility Floor에 명문화했고 키보드 대안·포커스 트랩·<code>aria-live</code>·핀 SR 라벨까지 행동 정본에 적었다 — 실제로 <strong>결정된 hex를 계산하면 핵심 상태/포커스 색 네 곳이 WCAG 2.2 AA를 통과하지 못한다</strong>: success 배지 흰 텍스트(3.16:1), destructive 흰 텍스트(4.36:1), pin-full 회색 인디케이터(2.25:1), primary 만다린 포커스 링(2.30:1). 본문·버튼 텍스트는 15:1+로 모두 통과하므로, 이 네 hex만 조정하면 스파인은 AA를 충족한다. <strong>참고: 본 검증 시점에 후속 편집 패스가 같은 세션에서 진행 중이다</strong> — 목업은 이미 <code>mockups/</code>로 승격됐고, 팔레트 hex는 결정 로그 D-13/D-14/D-15에 따라 보정 중이다. 따라서 rubric의 high 2건(elevation 토큰, 비주얼 레퍼런스)과 접근성 대비 실패 전부는 <strong>확인됨 &rarr; 해소 진행 중</strong>으로 표시한다(원문 finding은 보존).</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">Flow coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Token completeness</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Component coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">State coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Visual reference coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-broken)">broken</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Bloat &amp; overspecification</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">low / strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Inheritance discipline</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Shape fit</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+    </div>
+
+    <!-- 1. Flow coverage -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>1. Flow coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>모든 PRD UJ(UJ-1..UJ-4)가 Key Flow로 존재한다 — 정본과 동일한 이름, 주인공(지우/민재/현우/누구든), 번호 매겨진 단계, 명시적 <strong>Climax</strong> 비트, Resolution, 해당 시 Edge/실패 경로(UJ-1 동시성 edge, UJ-2 위치-거부 edge). 관리자/횡단 FR(FR-3, FR-29, FR-31~33)은 PRD §2.2에서 의도적으로 비-UJ로 표시됐고 스파인 자체 점검도 이를 의도된 비실현으로 명시 — 누락이 아니다. PRD 성능 기준(3-step, 3-min, 5-min register, 2s first token)이 클라이맥스 비트에 녹아 있다.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">UJ-3에 실패/edge 경로 부재 (UJ-1·UJ-2는 있음)</h3>
+              <span class="finding-location">EXPERIENCE.md:235-242</span>
+            </header>
+            <div class="finding-note">제공자 등록에는 그럴듯한 실패 모드(주소 검색 미스, 저장 실패)가 있다. State 매트릭스 "제공자 등록" 행이 이를 커버하나 flow 자체에는 edge 비트가 없다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> UJ-3에 한 줄짜리 Edge 추가(예: 주소 검색 실패 &rarr; 입력 보존 + 재시도)로 패리티를 맞추거나, State 행이 이를 담당함을 명기.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 2. Token completeness -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>2. Token completeness</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN.md frontmatter의 모든 YAML 토큰이 정의됐고, prose/컴포넌트의 모든 <code>{path.to.token}</code> 참조(약 70건)가 정의된 토큰으로 해석된다. 모든 컬러 토큰에 hex 값이 있다(missing-hex critical 없음). 로드베어링 조합에 대비 의도는 진술됐으나(cream bg + foreground WCAG AA, primary-foreground warm-brown를 순백 대신 선택) <strong>수치 비율은 커밋되지 않았다</strong>.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">로드베어링 조합의 측정 대비 비율 부재</h3>
+              <span class="finding-location">DESIGN.md:173, 263</span>
+            </header>
+            <div class="finding-note">Cream <code>#FFFCF4</code> + foreground <code>#28200F</code>, success <code>#19A65A</code> 배지 위 흰 텍스트, 맵 타일 위 핀 색이 수치 없이 "AA"로 단정된다. warm-brown <code>primary-foreground #3A2400</code> on <code>primary #FF8A1E</code>가 가장 위험(둘 다 중간톤)하며 미검증.</div>
+            <div class="finding-fix"><strong>Fix:</strong> bg+fg, 배지 텍스트, primary-fg-on-primary에 대한 비율 목표/측정값 추가. 페어가 주장한 "브랜드 오버라이드는 비율 유지로 검증됨"(EXPERIENCE.md:155)을 뒷받침하는 수치를 커밋. <em>(접근성 리뷰어가 실측 완료 &rarr; 해소 진행 중: primary-fg-on-primary 6.22:1 통과, 나머지는 아래 접근성 finding 참조)</em></div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">타입 램프가 정의됐으나 대부분 미참조 (정상)</h3>
+              <span class="finding-location">DESIGN.md:188</span>
+            </header>
+            <div class="finding-note"><code>{typography.body}</code>만 prose에서 line-height 1.6 인용으로 참조되며 정상 해석된다. 나머지 타입 램프는 정의-but-미참조(램프로서 수용 가능). 이슈 아님 — 기록만.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 조치 불필요.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 3. Component coverage -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>3. Component coverage</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>EXPERIENCE의 Component Patterns 대 DESIGN의 Components를 대조. 비주얼+행동 모두 존재로 매칭됨: 지도+핀, 바텀시트, 상세 내 예약 전개/스터디룸 상세 레이아웃, 달력+슬롯 피커, 즐겨찾기 토글, 인앱 배너, 플로팅 챗봇 FAB, 카드, 리스트 로우, 배지(예약 가능), 버튼-primary. shadcn 상속 컴포넌트(Sheet/Dialog/Toast/Tabs/Popover)는 양쪽에서 상속-계약으로 정확히 명명.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">섹션 간 명명 표류 (캘린더 vs 달력)</h3>
+              <span class="finding-location">DESIGN.Components / EXPERIENCE.Component Patterns</span>
+            </header>
+            <div class="finding-note">깨진 건 아니나 소비자 매핑 비용이 있다. DESIGN은 "스터디룸 상세 레이아웃" + "캘린더 + 슬롯 피커", EXPERIENCE는 "상세 내 예약 전개" + "달력 + 슬롯 피커"(달력 vs 캘린더). 같은 컴포넌트, 두 표기.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 한 용어(캘린더/슬롯 피커)를 골라 양쪽 파일에서 동일하게 사용.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">"지도+핀"이 DESIGN "맵 핀"에 암묵 매핑</h3>
+              <span class="finding-location">EXPERIENCE 행동 행 / DESIGN 비주얼 행</span>
+            </header>
+            <div class="finding-note">맵 표면 자체는 DESIGN 비주얼 행이 없고 핀만 있다. 맵이 3rd-party 카카오맵 표면이라 수용 가능하나 이름 페어링이 암묵적.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 선택 사항 — "맵 핀 / 지도+핀"으로 정렬하거나 맵이 벤더 소유임을 명기.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 4. State coverage -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>4. State coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>State 매트릭스가 모든 사용자 IA 표면 × {빈/에러/오프라인/로딩}을 걷는다. 모든 셀이 설계됐고, 유일한 N/A(상세 빈 상태)는 명시적으로 정당화됨("룸이 있어야 진입") — 갭이 아니다. 위치 권한 거부는 구체적 우회(행정동 콤보)를 가진 전용 행이며, PRD 필수 하드 셀(지도 로드 실패, 목록 결과없음, 슬롯 동시성 충돌, 챗봇 범위밖/모름, 권한거부 우회)이 모두 존재하고 호출됨. 오프라인 동작은 표면별 명세(cache + toast).</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">관리자-웹 표면에 State 매트릭스 행 없음</h3>
+              <span class="finding-location">EXPERIENCE State matrix</span>
+            </header>
+            <div class="finding-note">계정 관리·예약 임의취소·챗봇 문서 인제스트에 State 행이 없고 제공자 등록만 매트릭스에 있다. 관리자는 의도적으로 비-UJ·저충실도("모바일 대응 부차적")라 방어 가능하나, 관리자 앱을 만드는 story-dev는 빈/에러/로딩 가이드를 못 받는다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 단일 coarse 관리자 행 추가, 또는 관리자 상태가 shadcn data-table 기본을 상속하며 experience-matrix 범위 밖임을 한 번 명기.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 5. Visual reference coverage -->
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>5. Visual reference coverage</h2>
+          <span class="verdict-pill verdict-broken">broken</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>폴더 확인: 존재 = <code>.working/color-themes-1.html</code>(D-05 팔레트 피커), 빈 <code>imports/</code>, <code>mockups/</code> 폴더 <strong>없음</strong>, 어디에도 <code>key-*.html</code> 화면 목업 <strong>없음</strong>. EXPERIENCE.md는 "<code>mockups/</code> 내 화면 HTML"로 일반 링크(line 80), DESIGN.md는 비주얼 레퍼런스 링크가 <strong>전혀 없음</strong>. Spine-wins-on-conflict는 한 번 진술됨(EXPERIENCE.md:80).</p>
+            <p><strong>해소 컨텍스트:</strong> 동일 세션 후속 편집 패스에서 목업이 이미 <code>mockups/</code>로 승격됨 &rarr; 아래 high finding은 <strong>확인됨 &rarr; 해소 진행 중</strong>.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <span class="badge-status">확인됨 &rarr; 해소 진행 중</span>
+              <h3 class="finding-title">비주얼 레퍼런스 계약이 아무것도 가리키지 않음</h3>
+              <span class="finding-location">EXPERIENCE.md:80</span>
+            </header>
+            <div class="finding-note">EXPERIENCE.md:80이 존재하지 않는 <code>mockups/</code> HTML을 링크하고, 나중에 승격할 <code>key-*.html</code> 목업이 <code>.working/</code>에도 없었다 — 유일한 HTML은 화면 구성이 아닌 컬러-팔레트 도구. 링크를 따라간 소비자는 dead path를 만난다. <em>(검증 시점 상태. 후속 패스에서 목업이 mockups/로 승격되며 해소 진행 중.)</em></div>
+            <div class="finding-fix"><strong>Fix:</strong> 화면 목업(지도/바텀시트/상세-예약전개/슬롯피커/챗봇이 로드베어링) 생성 후 섹션별 링크, 또는 MVP에 목업이 없다면 EXPERIENCE.md:80 포인터를 제거/완화해 dangling 방지.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">DESIGN.md가 비주얼 레퍼런스/팔레트 소스를 인용 안 함</h3>
+              <span class="finding-location">DESIGN.md (Colors)</span>
+            </header>
+            <div class="finding-note">DESIGN.md는 비주얼 레퍼런스 링크가 전혀 없고 D-05가 선택한 팔레트 소스 <code>.working/color-themes-1.html</code>도 인용하지 않는다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 팔레트-소스 레퍼런스(및 생성 시 컴포넌트별 비주얼 목업)를 추가해 비주얼 스파인이 선택된 아티팩트로 추적되게 함.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">color-themes-1.html이 스파인 기준 orphan</h3>
+              <span class="finding-location">.working/color-themes-1.html</span>
+            </header>
+            <div class="finding-note">결정 로그(D-05)에서 선택됐으나 DESIGN.md에서 미링크. 충돌은 아니고 단지 미추적.</div>
+            <div class="finding-fix"><strong>Fix:</strong> DESIGN.Colors에 한 줄 인용.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 6. Bloat & overspecification -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>6. Bloat &amp; overspecification</h2>
+          <span class="verdict-pill verdict-strong">low / strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>bloat 낮음. 제품 특화 섹션(시간·타임존, 동시성, 챗봇)이 PRD 재진술로 보일 수 있으나 FR을 UX-결정 형태(graceful failure copy, 인접 슬롯 재표시, drag의 키보드 대안)로 번역 — story-dev에 로드베어링이지 bloat 아님. EXPERIENCE 말미의 자체 점검 섹션은 finalize 시 다듬을 수 있는 프로세스 스캐폴딩이나 해는 없음.</p>
+          </div>
+        </div>
+        <div class="findings-list"></div>
+      </details>
+    </section>
+
+    <!-- 7. Inheritance discipline -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>7. Inheritance discipline</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>UJ 이름이 PRD에서 verbatim ✔. 글로서리 용어(바텀시트, 핀, 인앱 배너, 룸메이트)가 일관 사용 ✔. 동시성/타임존/챗봇 제품 특화 섹션이 PRD FR-15/§10/FR-25~30을 모순 없이 충실히 반영 ✔.</p>
+          </div>
+        </div>
+        <div class="findings-list"></div>
+      </details>
+    </section>
+
+    <!-- 8. Shape fit -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>8. Shape fit</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN 본문이 정본 순서를 따름(Brand &amp; Style &rarr; Colors &rarr; Typography &rarr; Layout &rarr; Elevation &rarr; Shapes &rarr; Components &rarr; Do's/Don'ts), Motion은 플래그된 ASSUMPTION 부록으로 첨부 ✔. EXPERIENCE는 모든 필수 기본(Foundation, IA, Voice/Tone, Component Patterns, State, Interaction Primitives, A11y, Responsive, Key Flows) + 적용 시 필수 제품 섹션을 갖춤 ✔. 두 파일 모두 <code>status: draft</code>(finalize 전 일관) ✔.</p>
+          </div>
+        </div>
+        <div class="findings-list"></div>
+      </details>
+    </section>
+
+    <!-- 추가 리뷰어: 접근성 (closed/collapsible, adversarial voice 보존) -->
+    <section class="reviewer-section">
+      <details>
+        <summary>
+          <h2>Accessibility review (접근성 렌즈 · WCAG 2.2 AA)</h2>
+          <span class="reviewer-source">review-accessibility.md</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>스파인의 a11y "의도"는 동급 최고 수준이다 — 색-단독 신호 금지를 토큰 노트(<code>badge-available.note</code>, <code>pin-*.note</code>)와 EXPERIENCE의 Accessibility Floor에 <strong>명문화</strong>했고, 슬롯 드래그의 키보드 대안·포커스 트랩·<code>aria-live</code>·핀 SR 라벨까지 행동 정본에 적어 두었다. 다만 실제로 <strong>결정된 hex를 계산해 보면 핵심 상태색 네 곳이 WCAG를 통과하지 못한다</strong>: success 배지의 흰 텍스트(3.16:1), destructive 흰 텍스트(4.36:1, 일반 텍스트 미달), pin-full 회색 인디케이터(2.25:1), 그리고 포커스 링으로 쓰겠다고 선언한 primary 만다린(2.30:1 vs 크림)이다. "친근함을 위해 저대비와 맞바꾸지 않는다"는 Do/Don't 원칙이 본문 텍스트에선 지켜졌으나(15:1+) 상태색·포커스 가시성에선 무너졌다 — 이 네 hex만 조정하면 스파인은 AA를 통과한다. 결정의 방향은 옳고, 수치 검증이 누락됐을 뿐이다. <strong>검사 17건(핵심) 중 — Pass 9, 경계/조건부 3, Fail 4.</strong></p>
+            <p><strong>해소 컨텍스트:</strong> 네 건의 실제 대비 실패는 동일 세션 후속 패스에서 결정 로그 D-13/D-14/D-15에 따라 hex가 보정되는 중 &rarr; 아래 contrast finding은 <strong>확인됨 &rarr; 해소 진행 중</strong>(원문 보존).</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <span class="badge-status">확인됨 &rarr; 해소 진행 중</span>
+              <h3 class="finding-title">pin-full 인디케이터 대비 2.25–2.30:1 (비텍스트 3:1 미달)</h3>
+              <span class="finding-location">DESIGN.md colors.pin-full · Components 맵 핀</span>
+            </header>
+            <div class="finding-note">pin-full <code>#B2AA9C</code>가 배경/카드 대비 2.25–2.30:1로 비텍스트 3:1 기준 미달. 저시력 사용자는 "마감" 핀을 배경과 구분하기 어렵다. 색-단독 금지 원칙 덕에 X 아이콘이 동반되지만, 아이콘 자체도 같은 회색이면 같이 안 보인다 — 형태 식별의 전제인 충분한 대비가 없다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> pin-full을 <code>#7E7466</code>(4.47:1)로 어둡게; 아이콘은 흰색 글리프 + 회색 채움으로 분리해 대비 확보.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <span class="badge-status">확인됨 &rarr; 해소 진행 중</span>
+              <h3 class="finding-title">포커스 링 primary 대비 2.30:1 (비텍스트 3:1 미달)</h3>
+              <span class="finding-location">DESIGN.md colors.ring</span>
+            </header>
+            <div class="finding-note">포커스 링을 primary <code>#FF8A1E</code>로 지정했으나 크림 배경 대비 2.30:1로 미달. 키보드/스위치 사용자가 현재 포커스 위치를 못 본다 — WCAG 2.4.11(Focus Appearance, 2.2 신규) 및 2.4.7 위반 위험.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 링 색을 <code>#D86E0A</code>(3.33:1)로 어둡게 하거나, 2px 두께 + 흰색 1px 오프셋(이중 링)으로 인접 대비 보장. shadcn <code>ring</code>은 RN에서 자동 적용 안 되므로 RN 포커스/하이라이트 스타일을 별도 토큰으로 명시 필요.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <span class="badge-status">확인됨 &rarr; 해소 진행 중</span>
+              <h3 class="finding-title">success 위 흰 텍스트 배지 3.16:1 (본문 4.5:1 미달)</h3>
+              <span class="finding-location">DESIGN.md badge-available · Components 배지</span>
+            </header>
+            <div class="finding-note">success <code>#19A65A</code> 위 흰 텍스트가 3.16:1로 본문 텍스트 4.5:1 미달. "예약 가능" 배지 글자가 흐리게 읽힌다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> success를 <code>#157F45</code>(흰 텍스트 5.06:1, 크림 대비 4.93)로 통일 — 핀-가용 색까지 함께 끌어올려 두 마리 토끼.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <span class="badge-status">확인됨 &rarr; 해소 진행 중</span>
+              <h3 class="finding-title">destructive 위 흰 텍스트 4.36:1 (일반 텍스트 4.5:1 미달)</h3>
+              <span class="finding-location">DESIGN.md destructive / destructive-foreground</span>
+            </header>
+            <div class="finding-note">destructive <code>#E03A2E</code> 위 흰 텍스트가 4.36:1로 일반 텍스트 4.5:1 미달. 취소·삭제 버튼/토스트 텍스트가 큰 글자가 아니면 미달.</div>
+            <div class="finding-fix"><strong>Fix:</strong> destructive를 <code>#CC3328</code>(5.16:1)로 살짝 어둡게. 또는 해당 텍스트를 항상 label(14px/500) 이상·굵게 유지(그래도 14px는 "큰 텍스트" 아님 — 색 조정 권장).</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">prefers-reduced-motion 대응이 어디에도 없음</h3>
+              <span class="finding-location">DESIGN.md 모션 [ASSUMPTION] · EXPERIENCE Interaction Primitives</span>
+            </header>
+            <div class="finding-note">모션 섹션이 <code>[ASSUMPTION]</code>으로만 존재하고 reduced-motion 대응이 없다. 스프링감·바텀시트 상승·하트 토글 등 마이크로모션이 전정장애·ADHD 사용자에게 불편/유발 가능. WCAG 2.3.3(AAA지만 권장).</div>
+            <div class="finding-fix"><strong>Fix:</strong> "모든 마이크로모션은 <code>prefers-reduced-motion: reduce</code>(웹) / <code>AccessibilityInfo.isReduceMotionEnabled</code>(RN)에서 0ms 또는 페이드로 대체"를 모션 섹션에 명문화. Finalize 검토 항목에 추가.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">터치 타깃 최소 크기 규정 부재 (44×44 / 48dp)</h3>
+              <span class="finding-location">EXPERIENCE Layout / Accessibility Floor</span>
+            </header>
+            <div class="finding-note">터치 타깃 최소 크기 규정이 스파인 어디에도 없다. 지도 핀, 슬롯 셀, 하트 토글, 지도/목록 토글, 그래버가 작아질 위험. WCAG 2.5.8(Target Size, 2.2 AA = 24px 최소, iOS HIG 44 / Android 48 권장).</div>
+            <div class="finding-fix"><strong>Fix:</strong> "모든 인터랙티브 타깃 ≥44×44px(시각 크기가 작아도 히트영역 확장), 슬롯 셀 최소 높이 44px"를 Layout &amp; Spacing 또는 Accessibility Floor에 추가. 핀 밀집 시 클러스터링으로 24px 최소 간격 확보.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">aria-live 적용 범위가 챗봇 스트리밍에만 한정</h3>
+              <span class="finding-location">EXPERIENCE Accessibility Floor</span>
+            </header>
+            <div class="finding-note">인앱 배너(도래 리마인드·상태변경 통지), 동시성 충돌/슬롯 재표시, 토스트(예약 완료 등)가 SR에 자동 안내되지 않으면 놓친다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 인앱 배너·토스트 = <code>role="status"</code>(polite), 슬롯 충돌·에러 = <code>role="alert"</code>(assertive)로 명시. RN은 <code>AccessibilityInfo.announceForAccessibility</code>로 등가 처리.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">아이콘 단독 컨트롤의 accessible name 미명세 (핀 외)</h3>
+              <span class="finding-location">EXPERIENCE Accessibility Floor</span>
+            </header>
+            <div class="finding-note">하트 토글(채움/외곽선만으로 상태 구분), FAB "룸메이트", 지도/목록 토글, 바텀시트 그래버는 상태까지 읽혀야 한다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 하트 = <code>aria-pressed</code> + "즐겨찾기 추가됨/해제됨"; FAB = "룸메이트 챗봇 열기"; 토글 = "지도 보기/목록 보기" + 현재 상태; 그래버 = "정보 시트 펼치기/접기". RN은 <code>accessibilityRole</code>+<code>accessibilityState</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">슬롯 연속 선택 진행 상태의 SR 전달 미명세</h3>
+              <span class="finding-location">EXPERIENCE Interaction Primitives (슬롯 피커)</span>
+            </header>
+            <div class="finding-note">슬롯 피커 키보드 대안은 정의됨(방향키+Enter) — 좋음. 그러나 연속 선택 진행 상태가 SR에 어떻게 전달되는지 미명세. 비연속 불허를 시각적으로만 막으면 SR 사용자는 "왜 선택이 안 되는지" 모른다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 슬롯 셀에 <code>aria-disabled</code>+사유 라벨("이미 예약됨"/"지난 시간"), 선택 진행 시 "14시 시작 선택됨, 종료 시각을 고르세요" 같은 live 안내.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">RN에는 Esc도 DOM 포커스 트랩도 없음</h3>
+              <span class="finding-location">EXPERIENCE (다이얼로그/바텀시트 포커스 관리)</span>
+            </header>
+            <div class="finding-note">다이얼로그/바텀시트 포커스 관리는 명시됨(진입·Esc·트랩·복귀) — 잘 됨. 다만 RN에는 Esc도 DOM 포커스 트랩도 없다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> RN 바텀시트/모달은 <code>accessibilityViewIsModal</code>(iOS) + Android <code>importantForAccessibility="no-hide-descendants"</code>로 배경 격리, 닫기는 백 제스처/명시적 닫기 버튼. 플랫폼 델타로 분리 명시.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">동적 타입/텍스트 스케일링 규정 부재</h3>
+              <span class="finding-location">DESIGN.md Typography</span>
+            </header>
+            <div class="finding-note">caption 12px는 메타 한정으로 수용 가능하나, 고정 높이 슬롯 셀·배지·탭바가 200% 확대(WCAG 1.4.4) 또는 iOS Dynamic Type에서 깨질 수 있다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> "고정 px 높이 컴포넌트는 텍스트 확대 시 줄바꿈/높이 증가 허용, 잘림 금지"를 Typography에 추가. line-height 1.6은 한글 가독성에 적절(통과).</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">폼(제공자 등록·후기) a11y가 스파인에 없음</h3>
+              <span class="finding-location">EXPERIENCE (제공자 등록 상태만 존재)</span>
+            </header>
+            <div class="finding-note">라벨 연결, 에러-필드 association(<code>aria-describedby</code>), 필수 표시 방법 미정. 색만으로 에러 표시 위험(destructive 빨강).</div>
+            <div class="finding-fix"><strong>Fix:</strong> "폼 필드 = 가시 라벨 + <code>for/id</code> 연결, 에러는 색+아이콘+텍스트 &amp; 필드에 association, 필수는 별표+텍스트('필수')" 추가. 후기 별점은 키보드/SR 입력 가능해야.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">"색-단독 금지"가 인앱 배너·마감 슬롯엔 미명시</h3>
+              <span class="finding-location">EXPERIENCE Do/Don't · Accessibility Floor</span>
+            </header>
+            <div class="finding-note">색-단독 금지가 핀·배지엔 명문화됐으나 인앱 배너·마감 슬롯엔 명시 안 됨. 배너 두 종류(리마인드/상태변경)가 색으로만 구분되면 안 된다.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 배너·슬롯 상태 모두 아이콘+텍스트 라벨 동반을 Do/Don't 또는 Accessibility Floor에 일반 규칙으로 끌어올림(현재는 핀 예시에 국한).</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- 기계적 메모 -->
+    <div class="mechanical">
+      <h3>Mechanical notes</h3>
+      <ul>
+        <li><strong>Broken cross-ref (high) — 확인됨 &rarr; 해소 진행 중:</strong> EXPERIENCE.md:111 <code>{elevation.sheet}</code>와 EXPERIENCE.md:116 <code>{elevation.fab}</code>가 해석되지 않음 — DESIGN.md에 <code>elevation</code> frontmatter 토큰 그룹이 없다(elevation은 prose ## Elevation &amp; Depth + 리터럴 값 <code>elevation: floating</code> / <code>elevation: flat</code>로만 존재). resolver가 EXPERIENCE 참조를 DESIGN frontmatter에 flatten하면 이 둘에서 실패. <strong>Fix:</strong> DESIGN frontmatter에 <code>elevation</code> 토큰 그룹 추가 후 컴포넌트가 <code>{elevation.sheet}</code> 참조, 또는 EXPERIENCE를 prose("그림자 — DESIGN.Elevation 참조")로 바꾸고 토큰 구문 제거. 둘 중 하나로 통일. (후속 편집 패스에서 해소 진행 중.)</li>
+        <li><strong>Section-name ref (low):</strong> EXPERIENCE.md:148이 <code>DESIGN.md.Motion</code>을 인용하나 DESIGN의 모션은 <code>### 모션 [ASSUMPTION]</code>(Do's &amp; Don'ts 하위 중첩)에 있고 top-level <code>## Motion</code>이 아님. 의도로는 해석되나 앵커 이름이 다름. <strong>Fix:</strong> <code>## Motion</code>으로 승격하거나 실제 헤딩을 인용.</li>
+        <li><strong>Frontmatter:</strong> 두 파일 모두 <code>status: draft</code>(일관, finalize 전). EXPERIENCE.design_ref &rarr; ./DESIGN.md ✔. 동일 <code>sources</code> 리스트가 실제 PRD/brief/research/idea 경로로 해석 ✔. DESIGN의 <code>ui_system: shadcn</code> / <code>document_output_language: korean</code>은 스펙 표 외 추가 키(무해·정보성).</li>
+        <li><strong>권장 토큰 패치 (접근성 리뷰어 요약):</strong> <code>success</code>/<code>pin-available</code> <code>#19A65A</code>&rarr;<code>#157F45</code>, <code>destructive</code> <code>#E03A2E</code>&rarr;<code>#CC3328</code>, <code>pin-full</code> <code>#B2AA9C</code>&rarr;<code>#7E7466</code>, <code>ring</code> <code>#FF8A1E</code>&rarr;<code>#D86E0A</code>(또는 이중 링). 본문·버튼·secondary·accent 텍스트 대비는 전부 통과 — 위 4개 상태/포커스 토큰만 조정하면 WCAG 2.2 AA 충족. (D-13/D-14/D-15에 따라 해소 진행 중.)</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>DESIGN: ./DESIGN.md</span>
+        <span>EXPERIENCE: ./EXPERIENCE.md</span>
+        <span>Reviewers: review-rubric.md · review-accessibility.md</span>
+        <span>Run-at: 2026-06-14</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

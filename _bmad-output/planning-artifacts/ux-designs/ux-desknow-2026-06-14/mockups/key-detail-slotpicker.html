@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeskNow — 상세 + 슬롯 피커</title>
+<style>
+/* Governing spine: EXPERIENCE.md → Component Patterns(상세 내 예약 전개, 달력+슬롯 피커), Key Flows UJ-1·UJ-2(상세 진입~확정 ≤3스텝), Interaction Primitives(연속 슬롯·비연속 불허), 시간·타임존 규칙(당일 현재시각 이전 비활성·예약된 슬롯 비활성). DESIGN.md → 스터디룸 상세 레이아웃, 캘린더+슬롯 피커(가용/마감/선택-범위), Layout(상세=여백 우선), Colors. */
+:root{
+  --primary:#FF8A1E; --primary-foreground:#3A2400; --secondary:#FFF0D6; --accent:#FFC24D;
+  --background:#FFFCF4; --card:#FFFFFF; --foreground:#28200F; --muted:#F4EDDF;
+  --muted-foreground:#7A6E55; --border:#F4E2C2; --destructive:#E03A2E;
+  --success:#19A65A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#E9E6DC;font-family:"Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;display:flex;justify-content:center;align-items:flex-start;padding:24px;color:var(--foreground);}
+.phone{width:390px;height:844px;background:var(--background);border-radius:28px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;flex-shrink:0;}
+.navbar{height:48px;display:flex;align-items:center;gap:12px;padding:0 16px;flex-shrink:0;}
+.navbar .back{font-size:20px;}
+.navbar .ttl{font-size:15px;font-weight:600;}
+.navbar .heart{margin-left:auto;font-size:20px;color:var(--destructive);}
+.scroll{flex:1;overflow:hidden;}
+
+/* hero image placeholder */
+.hero{height:150px;background:linear-gradient(135deg,var(--secondary),var(--accent));display:flex;align-items:center;justify-content:center;color:var(--primary-foreground);font-size:13px;font-weight:600;opacity:.9;}
+
+.body{padding:18px 20px 0;}
+/* room info hierarchy 1/2/3 */
+h1{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.4;}
+.cap{font-size:12px;color:var(--muted-foreground);margin-top:5px;}
+.t1{display:flex;align-items:center;gap:10px;margin-top:12px;}
+.price{font-size:18px;font-weight:700;}
+.price small{font-size:13px;font-weight:500;color:var(--muted-foreground);}
+.hours{font-size:13px;color:var(--muted-foreground);}
+.badge-avail{display:inline-flex;align-items:center;gap:5px;background:var(--success);color:#fff;border-radius:9999px;padding:4px 10px;font-size:12px;font-weight:600;}
+.facilities{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.tag{background:var(--secondary);color:var(--primary-foreground);border-radius:9999px;padding:5px 11px;font-size:12px;font-weight:500;}
+
+.divider{height:1px;background:var(--border);margin:20px 0;}
+
+.section-h{font-size:18px;font-weight:600;margin-bottom:14px;}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-head .m{font-size:15px;font-weight:600;}
+.cal-head .arr{color:var(--muted-foreground);font-size:16px;}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--muted-foreground);margin-bottom:6px;}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:8px;}
+.day.past{color:#C9BFA9;}
+.day.sel{background:var(--primary);color:var(--primary-foreground);font-weight:700;}
+
+/* slot grid */
+.slot-sub{font-size:12px;color:var(--muted-foreground);margin:4px 0 12px;}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.slot{height:46px;border-radius:8px;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--foreground);}
+.slot.disabled{background:var(--muted);color:var(--muted-foreground);border-color:var(--muted);}
+.slot.booked{background:var(--muted);color:var(--muted-foreground);border-color:var(--muted);text-decoration:line-through;}
+/* contiguous selected range 14:00–17:00 */
+.slot.sel{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary);}
+.legend{display:flex;gap:14px;margin-top:12px;font-size:11px;color:var(--muted-foreground);}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+/* confirm area (sticky) */
+.confirm{flex-shrink:0;background:var(--card);border-top:1px solid var(--border);padding:14px 20px 22px;}
+.confirm-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;}
+.confirm-row .sel-txt{font-size:14px;font-weight:600;}
+.confirm-row .sel-txt small{display:block;font-size:12px;font-weight:400;color:var(--muted-foreground);margin-top:2px;}
+.confirm-row .total{font-size:20px;font-weight:700;}
+.cta{width:100%;height:52px;background:var(--primary);color:var(--primary-foreground);border:none;border-radius:8px;font-family:inherit;font-size:16px;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span></span><span>●●● ▼ ■</span></div>
+  <div class="navbar"><span class="back">‹</span><span class="ttl">스터디룸 상세</span><span class="heart">♡</span></div>
+
+  <div class="scroll">
+    <div class="hero">강남 스터디라운지</div>
+    <div class="body">
+      <!-- 1차 -->
+      <h1>강남 스터디라운지</h1>
+      <div class="cap">서울 강남구 역삼동 테헤란로 124, 3층 · 최대 6인 · 독립룸</div>
+      <div class="t1">
+        <div class="price">8,000원<small> /시간</small></div>
+        <div class="hours">· 09:00–22:00</div>
+        <div class="badge-avail">✓ 예약 가능</div>
+      </div>
+      <!-- 2차 -->
+      <div class="facilities">
+        <span class="tag">와이파이</span><span class="tag">화이트보드</span><span class="tag">콘센트</span><span class="tag">음료 무료</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 3차: 같은 페이지 내 예약 전개 -->
+      <div class="section-h">날짜 선택</div>
+      <div class="cal-head"><span class="arr">‹</span><span class="m">2026년 6월</span><span class="arr">›</span></div>
+      <div class="dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="cal">
+        <span class="day"></span><span class="day"></span><span class="day"></span><span class="day"></span><span class="day"></span><span class="day"></span><span class="day past">13</span>
+        <span class="day past">14</span><span class="day sel">15</span><span class="day">16</span><span class="day">17</span><span class="day">18</span><span class="day">19</span><span class="day">20</span>
+        <span class="day">21</span><span class="day">22</span><span class="day">23</span><span class="day">24</span><span class="day">25</span><span class="day">26</span><span class="day">27</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-h">시간 선택</div>
+      <div class="slot-sub">연속된 시간만 고를 수 있어요 · 6월 15일</div>
+      <div class="slots">
+        <div class="slot disabled">09:00</div>
+        <div class="slot disabled">10:00</div>
+        <div class="slot disabled">11:00</div>
+        <div class="slot booked">12:00</div>
+        <div class="slot">13:00</div>
+        <div class="slot sel">14:00</div>
+        <div class="slot sel">15:00</div>
+        <div class="slot sel">16:00</div>
+        <div class="slot">17:00</div>
+        <div class="slot booked">18:00</div>
+        <div class="slot">19:00</div>
+        <div class="slot">20:00</div>
+        <div class="slot">21:00</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--primary)"></i>선택</span>
+        <span><i style="background:var(--card);border:1px solid var(--border)"></i>가능</span>
+        <span><i style="background:var(--muted)"></i>마감 · 지난 시간</span>
+      </div>
+      <div style="height:18px"></div>
+    </div>
+  </div>
+
+  <!-- 확정 -->
+  <div class="confirm">
+    <div class="confirm-row">
+      <div class="sel-txt">14:00–17:00<small>6월 15일 · 3시간</small></div>
+      <div class="total">24,000원</div>
+    </div>
+    <button class="cta">예약하기</button>
+  </div>
+</div>
+</body>
+</html>

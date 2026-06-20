@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/* DeskNow 공유 디자인 토큰(만다린) — 정본은 packages/ui/src/tokens.ts.
+ * Tailwind v4 는 @import 순서가 중요하므로 반드시 tailwindcss 다음에 둔다. */
+@import "@desknow/config/tailwind";

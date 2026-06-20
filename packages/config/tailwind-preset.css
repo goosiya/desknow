@@ -1,0 +1,111 @@
+/* DeskNow 공유 디자인 토큰 — "에너제틱 만다린" (Story 1.6).
+ *
+ * 라이트 전용. 다크는 시맨틱 구조만 남기고 값은 의도적으로 작성하지 않는다(AC2).
+ * (다크 확장 여지: 후속에 `.dark { … }` 추가. 지금은 어디에도 다크 값 없음.)
+ *
+ * 정본 = packages/ui/src/tokens.ts. 이 CSS 는 그 값을 미러하며,
+ * 일치는 parity 테스트(packages/ui/src/tokens.parity.test.ts)가 강제한다.
+ *
+ * 각 앱 globals.css 는 `@import "tailwindcss";` **다음**에 이 파일을 import 한다
+ * (Tailwind v4 는 @import 순서가 중요 — tailwindcss 가 먼저). */
+
+:root {
+  --background: #FFFCF4;
+  --foreground: #28200F;
+  --card: #FFFFFF;
+  --card-foreground: #28200F;
+  --popover: #FFFFFF;
+  --popover-foreground: #28200F;
+  --primary: #FF8A1E;
+  --primary-foreground: #3A2400;
+  --secondary: #FFF0D6;
+  --secondary-foreground: #3A2400;
+  --accent: #FFC24D;
+  --accent-foreground: #3A2400;
+  --muted: #F4EDDF;
+  --muted-foreground: #7A6E55;
+  --border: #F4E2C2;
+  --input: #F4E2C2;
+  --ring: #D86E0A;
+  --destructive: #CC3328;
+  --destructive-foreground: #FFFFFF;
+  --success: #157F45;
+  --pin-available: #157F45;
+  --pin-full: #7E7466;
+  --radius: 0.5rem;
+}
+
+/* Tailwind v4 네임스페이스 매핑 — hex bare-var(v3 의 hsl() 래퍼 금지). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-pin-available: var(--pin-available);
+  --color-pin-full: var(--pin-full);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: var(--radius);
+  --radius-xl: 0.75rem;
+
+  --shadow-sheet: 0 -4px 24px rgba(40, 32, 15, 0.12);
+  --shadow-dialog: 0 8px 32px rgba(40, 32, 15, 0.16);
+  --shadow-toast: 0 4px 16px rgba(40, 32, 15, 0.14);
+  --shadow-fab: 0 4px 12px rgba(40, 32, 15, 0.18);
+
+  --font-sans: var(--font-pretendard), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  /* AC3 ⓐ: 키보드 포커스 링(크림 배경 대비 ≥3:1). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* AC3 ⓑ: 터치 타겟 ≥44px — 인터랙티브 컨트롤에 부여하는 헬퍼. */
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 클릭 가능한 컨트롤은 손가락(pointer) 커서로 — Tailwind v4 가 <button> 기본 커서를
+   * default 로 바꿔 버튼·탭·토글·콤보(Radix Select 트리거 등)에 손가락이 안 나오던 것을 복원한다.
+   * (<a> 링크는 브라우저 기본이 이미 pointer.) 비활성 컨트롤은 제외해 오인 클릭 신호를 막는다. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /* AC3 ⓒ: reduced-motion — 비필수(장식) 모션만 축소하고,
+   *        ≤100ms 기능 피드백(트랜지션)은 보존한다.
+   *        `* { transition: none }` 같은 무차별 차단은 금지(AC3 위반). */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}

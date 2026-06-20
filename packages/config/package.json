@@ -1,0 +1,20 @@
+{
+  "name": "@desknow/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base.json": "./base.json",
+    "./eslint": "./eslint-preset.mjs",
+    "./tailwind": "./tailwind-preset.css"
+  },
+  "files": [
+    "base.json",
+    "eslint-preset.mjs",
+    "tailwind-preset.css"
+  ],
+  "dependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9"
+  }
+}

@@ -1,0 +1,80 @@
+# =============================================================================
+# desknow 루트 .gitignore
+# 목적: 시크릿(.env 류) 격리 — .env.example만 추적, 실제 비밀은 절대 커밋 금지 (NFR-6)
+# =============================================================================
+
+# ── 환경변수 / 시크릿 ────────────────────────────────────────────────────────
+.env
+*.env
+**/.env
+**/.env.local
+**/.env.*.local
+apps/api/.env
+
+# .env.example 류는 추적 대상(예외)
+!.env.example
+!**/.env.example
+
+# 기타 시크릿 파일
+*.pem
+*.key
+secrets/
+*.secret
+
+# ── Python (백엔드 apps/api) ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Node / 프론트(향후 스토리) ───────────────────────────────────────────────
+node_modules/
+.next/
+out/
+dist/
+build/
+.expo/
+.pnp
+.pnp.js
+coverage/
+*.tsbuildinfo
+.vercel
+
+# ── Turborepo (Story 1.2) ────────────────────────────────────────────────────
+.turbo/
+
+# ── OS / 에디터 ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# ── Phase 0 throwaway 스파이크 (Story 1.3) ───────────────────────────────────
+# 일회성 검증 코드. 결론은 docs/phase0-spike-results.md(추적됨)에 영속. 코드는 추적 제외.
+spikes/
+
+# ── Playwright MCP 검증 산출물 (git init 때 쓸려 들어감, 2026-06-20) ──────────
+# 스냅샷(.yml)·스크린샷·콘솔로그. 일회성 검증 출력이라 추적 제외.
+# 앞으로 모든 스냅샷은 .playwright/ 로 모은다(.mcp.json --output-dir, KTH 2026-06-20).
+.playwright-mcp/
+.playwright/
+
+# ── 루트에 흩어진 검증 스크린샷 ──────────────────────────────────────────────
+# 루트 직속 PNG만 차단(apps/*/assets 등 하위 PNG는 추적 유지).
+/*.png
+
+# ── Claude Code 로컬 설정/스킬 (팀 공유 아님 — KTH 결정 2026-06-20) ──────────
+.claude/
+
+# ── EAS / 모바일 앱 서명 비밀 (절대 커밋 금지) ───────────────────────────────
+credentials.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision

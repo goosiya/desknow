@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeskNow · 컬러 테마 탐색 (Warm Family · Light Mode)</title>
+<style>
+/*
+  DeskNow Color Themes — Warm Family Exploration
+  Light mode only. 5 distinct registers within the coral/orange family.
+  Status colors (pin-available green / pin-full gray) are tuned per theme
+  to stay clearly distinct from the warm PRIMARY.
+
+  ============================================================
+  THEME 1 — 피치 코랄 (Soft Peachy Coral)  · 부드럽고 따뜻한
+    primary             #FF7A6B
+    primary-foreground  #FFFFFF
+    secondary           #FFE8E2
+    accent              #FFB199
+    background          #FFF9F7
+    surface/card        #FFFFFF
+    muted               #F4ECE9
+    border              #F0DDD7
+    foreground          #2E2522
+    success/available   #2FB873
+    destructive         #E5484D
+    pin-available       #2FB873  (green)
+    pin-full            #B7AEAB  (gray)
+  ------------------------------------------------------------
+  THEME 2 — 비비드 탠저린 (Vivid Tangerine)  · 선명하고 활기찬
+    primary             #FF6A00
+    primary-foreground  #FFFFFF
+    secondary           #FFEAD6
+    accent              #FFA64D
+    background          #FFFBF6
+    surface/card        #FFFFFF
+    muted               #F3ECE3
+    border              #F2DEC6
+    foreground          #241C14
+    success/available   #1FA463
+    destructive         #DC2F33
+    pin-available       #1FA463  (green)
+    pin-full            #ADA59B  (gray)
+  ------------------------------------------------------------
+  THEME 3 — 선셋 코랄핑크 (Warm Sunset Coral-Pink)  · 감성적이고 화사한
+    primary             #F25C7A
+    primary-foreground  #FFFFFF
+    secondary           #FCE3E7
+    accent              #FF9A8B
+    background          #FFF7F8
+    surface/card        #FFFFFF
+    muted               #F4EAEC
+    border              #F2D9DE
+    foreground          #2C2026
+    success/available   #15A06B
+    destructive         #D83A4F
+    pin-available       #15A06B  (green)
+    pin-full            #B3A9AC  (gray)
+  ------------------------------------------------------------
+  THEME 4 — 테라코타 클레이 (Muted Terracotta / Clay)  · 차분하고 단단한
+    primary             #C25E45
+    primary-foreground  #FFFFFF
+    secondary           #F0E2DA
+    accent              #D98E6A
+    background          #FBF6F2
+    surface/card        #FFFFFF
+    muted               #EFE7E1
+    border              #E6D6CC
+    foreground          #2A211C
+    success/available   #3C8C5E
+    destructive         #C0392B
+    pin-available       #3C8C5E  (green)
+    pin-full            #A99E96  (gray)
+  ------------------------------------------------------------
+  THEME 5 — 에너제틱 만다린 (Energetic Mandarin)  · 경쾌하고 통통 튀는
+    primary             #FF8A1E
+    primary-foreground  #3A2400
+    secondary           #FFF0D6
+    accent              #FFC24D
+    background          #FFFCF4
+    surface/card        #FFFFFF
+    muted               #F4EDDF
+    border              #F4E2C2
+    foreground          #28200F
+    success/available   #19A65A
+    destructive         #E03A2E
+    pin-available       #19A65A  (green)
+    pin-full            #B2AA9C  (gray)
+  ============================================================
+*/
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+          "Malgun Gothic", "Noto Sans KR", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: #F2F1EF;
+  color: #1d1d1f;
+  padding: 28px 24px 56px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-head { max-width: 1500px; margin: 0 auto 22px; }
+.page-head h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+.page-head p { margin-top: 6px; color: #6b6660; font-size: 13.5px; line-height: 1.5; }
+.page-head .flags { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.flag {
+  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: #fff; border: 1px solid #e3e0db; color: #555049;
+}
+
+/* responsive 5-col grid that wraps */
+.grid {
+  max-width: 1500px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(250px, 1fr));
+  gap: 18px;
+}
+@media (max-width: 1400px) { .grid { grid-template-columns: repeat(3, minmax(250px, 1fr)); } }
+@media (max-width: 900px)  { .grid { grid-template-columns: repeat(2, minmax(250px, 1fr)); } }
+@media (max-width: 620px)  { .grid { grid-template-columns: 1fr; } }
+
+/* ---- theme card shell (each variation drives its own --vars) ---- */
+.theme {
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 22px rgba(40,30,25,0.07);
+  display: flex; flex-direction: column;
+}
+
+.theme-head {
+  padding: 16px 16px 14px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.theme-head .name {
+  font-size: 15.5px; font-weight: 800; color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+.theme-head .register {
+  margin-top: 4px; font-size: 12px; color: var(--muted-fg, #8a827c); line-height: 1.4;
+}
+
+/* ---- token chips ---- */
+.tokens { padding: 12px 14px 4px; background: var(--background); }
+.tok-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.tok {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10.5px; color: var(--foreground);
+}
+.swatch {
+  width: 18px; height: 18px; border-radius: 6px; flex: 0 0 auto;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+}
+.tok b { font-weight: 700; }
+.tok span { color: var(--muted-fg, #8a827c); font-variant-numeric: tabular-nums; }
+
+.tok-section-label {
+  grid-column: 1 / -1; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted-fg, #9a928c);
+  margin-top: 6px;
+}
+
+/* ---- UI snippet: bottom sheet card ---- */
+.snippet-wrap { padding: 14px; background: var(--background); }
+.snippet-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted-fg, #9a928c); margin-bottom: 8px;
+}
+
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 4px 16px rgba(40,30,25,0.08);
+}
+.sheet .grabber {
+  width: 36px; height: 4px; border-radius: 4px; background: var(--muted);
+  margin: 0 auto 12px;
+}
+.sheet-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.room-name { font-size: 15px; font-weight: 800; color: var(--foreground); letter-spacing: -0.01em; }
+.room-sub  { margin-top: 3px; font-size: 11.5px; color: var(--muted-fg, #8a827c); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--available) 14%, var(--surface));
+  color: var(--available);
+  border: 1px solid color-mix(in srgb, var(--available) 32%, transparent);
+  white-space: nowrap;
+}
+
+.heart {
+  width: 32px; height: 32px; border-radius: 10px; flex: 0 0 auto;
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center; cursor: default;
+}
+.heart svg { width: 17px; height: 17px; }
+
+.price-row {
+  margin-top: 12px; display: flex; align-items: baseline; gap: 6px;
+}
+.price { font-size: 17px; font-weight: 800; color: var(--foreground); }
+.price small { font-size: 11.5px; font-weight: 600; color: var(--muted-fg, #8a827c); }
+
+.cta-row { margin-top: 12px; display: flex; gap: 8px; }
+.btn-primary {
+  flex: 1; border: none; border-radius: 12px; padding: 11px 14px;
+  background: var(--primary); color: var(--primary-fg);
+  font-family: var(--font); font-size: 13.5px; font-weight: 800; cursor: default;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 38%, transparent);
+}
+.btn-ghost {
+  border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px;
+  background: var(--secondary); color: var(--primary);
+  font-family: var(--font); font-size: 13.5px; font-weight: 700; cursor: default;
+}
+
+/* ---- mini map with pins ---- */
+.map {
+  margin-top: 12px; height: 96px; border-radius: 12px; position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--muted) 55%, var(--surface)),
+                          color-mix(in srgb, var(--muted) 55%, var(--surface)));
+  border: 1px solid var(--border);
+}
+.map .road {
+  position: absolute; background: var(--surface); opacity: 0.85;
+}
+.map .road.h { left: 0; right: 0; height: 10px; top: 46px; }
+.map .road.v { top: 0; bottom: 0; width: 10px; left: 64%; }
+.map .block {
+  position: absolute; border-radius: 5px;
+  background: color-mix(in srgb, var(--muted) 80%, var(--surface));
+}
+
+.pin {
+  position: absolute; width: 26px; height: 26px; border-radius: 50% 50% 50% 2px;
+  transform: rotate(45deg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 7px rgba(30,20,15,0.28);
+  border: 2px solid var(--surface);
+}
+.pin svg { transform: rotate(-45deg); width: 13px; height: 13px; }
+.pin.available { background: var(--pin-available); }
+.pin.full      { background: var(--pin-full); }
+
+.legend { margin-top: 10px; display: flex; gap: 14px; }
+.legend .item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-fg, #8a827c); }
+.legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+.legend .dot svg { width: 8px; height: 8px; }
+.legend .dot.av { background: var(--pin-available); }
+.legend .dot.fu { background: var(--pin-full); }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>DeskNow · 컬러 테마 탐색 — Warm Family</h1>
+  <p>활기·친근·경쾌한 브랜드 무드를 위한 따뜻한(코랄/오렌지) 계열 5종. 각 테마는 색조뿐 아니라 <b>무드(register)</b>가 다릅니다.
+     상태색(예약 가능 green / 마감 gray)은 따뜻한 primary와 명확히 구분되도록 테마별로 조정했습니다. 핀은 색상 외 아이콘(체크/엑스)도 함께 사용합니다.</p>
+  <div class="flags">
+    <span class="flag">Light mode only</span>
+    <span class="flag">UI 시스템: shadcn</span>
+    <span class="flag">앵커: 토스 · 에어비앤비 · 카카오맵</span>
+    <span class="flag">밀도: balanced</span>
+    <span class="flag">5 variations</span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- ===================== THEME 1 ===================== -->
+  <section class="theme" style="
+    --primary:#FF7A6B; --primary-fg:#FFFFFF; --secondary:#FFE8E2; --accent:#FFB199;
+    --background:#FFF9F7; --surface:#FFFFFF; --muted:#F4ECE9; --border:#F0DDD7;
+    --foreground:#2E2522; --muted-fg:#9c8e88; --available:#2FB873; --destructive:#E5484D;
+    --pin-available:#2FB873; --pin-full:#B7AEAB;">
+    <div class="theme-head">
+      <div class="name">피치 코랄</div>
+      <div class="register">부드럽고 따뜻한 · soft peachy-coral, 환영하는 첫인상</div>
+    </div>
+    <div class="tokens">
+      <div class="tok-grid">
+        <div class="tok"><span class="swatch" style="background:#FF7A6B"></span><div><b>primary</b><br><span>#FF7A6B</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>primary-fg</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFE8E2"></span><div><b>secondary</b><br><span>#FFE8E2</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFB199"></span><div><b>accent</b><br><span>#FFB199</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFF9F7"></span><div><b>background</b><br><span>#FFF9F7</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>surface/card</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F4ECE9"></span><div><b>muted</b><br><span>#F4ECE9</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F0DDD7"></span><div><b>border</b><br><span>#F0DDD7</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#2E2522"></span><div><b>foreground</b><br><span>#2E2522</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#E5484D"></span><div><b>destructive</b><br><span>#E5484D</span></div></div>
+        <div class="tok-section-label">status</div>
+        <div class="tok"><span class="swatch" style="background:#2FB873"></span><div><b>pin-available</b><br><span>#2FB873</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#B7AEAB"></span><div><b>pin-full</b><br><span>#B7AEAB</span></div></div>
+      </div>
+    </div>
+    <div class="snippet-wrap">
+      <div class="snippet-label">Bottom sheet · 스터디룸 상세</div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-top">
+          <div>
+            <div class="room-name">강남 스터디라운지</div>
+            <div class="room-sub">영업시간 09:00–22:00</div>
+          </div>
+          <div class="heart"><svg viewBox="0 0 24 24" fill="#FF7A6B" stroke="#FF7A6B" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.5 2.2 5 5.7 5 8 5 9.3 6.4 12 9c2.7-2.6 4-4 6.3-4 3.5 0 5.1 3.5 3.7 6.7C19.5 16.4 12 21 12 21z"/></svg></div>
+        </div>
+        <div style="margin-top:10px"><span class="badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>예약 가능</span></div>
+        <div class="price-row"><span class="price">8,000원</span><small>/ 시간당</small></div>
+        <div class="cta-row">
+          <button class="btn-ghost">문의</button>
+          <button class="btn-primary">예약하기</button>
+        </div>
+        <div class="map">
+          <div class="road h"></div><div class="road v"></div>
+          <div class="block" style="left:8px;top:8px;width:40px;height:28px;"></div>
+          <div class="block" style="right:8px;bottom:8px;width:34px;height:24px;"></div>
+          <div class="pin available" style="left:22%;top:18%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="pin full" style="left:70%;top:54%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <div class="pin available" style="left:44%;top:60%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="legend">
+          <div class="item"><span class="dot av"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span>예약 가능</div>
+          <div class="item"><span class="dot fu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M6 6l12 12M18 6L6 18"/></svg></span>마감</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== THEME 2 ===================== -->
+  <section class="theme" style="
+    --primary:#FF6A00; --primary-fg:#FFFFFF; --secondary:#FFEAD6; --accent:#FFA64D;
+    --background:#FFFBF6; --surface:#FFFFFF; --muted:#F3ECE3; --border:#F2DEC6;
+    --foreground:#241C14; --muted-fg:#9a8b78; --available:#1FA463; --destructive:#DC2F33;
+    --pin-available:#1FA463; --pin-full:#ADA59B;">
+    <div class="theme-head">
+      <div class="name">비비드 탠저린</div>
+      <div class="register">선명하고 활기찬 · vivid tangerine, 행동을 부르는 에너지</div>
+    </div>
+    <div class="tokens">
+      <div class="tok-grid">
+        <div class="tok"><span class="swatch" style="background:#FF6A00"></span><div><b>primary</b><br><span>#FF6A00</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>primary-fg</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFEAD6"></span><div><b>secondary</b><br><span>#FFEAD6</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFA64D"></span><div><b>accent</b><br><span>#FFA64D</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFBF6"></span><div><b>background</b><br><span>#FFFBF6</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>surface/card</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F3ECE3"></span><div><b>muted</b><br><span>#F3ECE3</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F2DEC6"></span><div><b>border</b><br><span>#F2DEC6</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#241C14"></span><div><b>foreground</b><br><span>#241C14</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#DC2F33"></span><div><b>destructive</b><br><span>#DC2F33</span></div></div>
+        <div class="tok-section-label">status</div>
+        <div class="tok"><span class="swatch" style="background:#1FA463"></span><div><b>pin-available</b><br><span>#1FA463</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#ADA59B"></span><div><b>pin-full</b><br><span>#ADA59B</span></div></div>
+      </div>
+    </div>
+    <div class="snippet-wrap">
+      <div class="snippet-label">Bottom sheet · 스터디룸 상세</div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-top">
+          <div>
+            <div class="room-name">강남 스터디라운지</div>
+            <div class="room-sub">영업시간 09:00–22:00</div>
+          </div>
+          <div class="heart"><svg viewBox="0 0 24 24" fill="#FF6A00" stroke="#FF6A00" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.5 2.2 5 5.7 5 8 5 9.3 6.4 12 9c2.7-2.6 4-4 6.3-4 3.5 0 5.1 3.5 3.7 6.7C19.5 16.4 12 21 12 21z"/></svg></div>
+        </div>
+        <div style="margin-top:10px"><span class="badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>예약 가능</span></div>
+        <div class="price-row"><span class="price">8,000원</span><small>/ 시간당</small></div>
+        <div class="cta-row">
+          <button class="btn-ghost">문의</button>
+          <button class="btn-primary">예약하기</button>
+        </div>
+        <div class="map">
+          <div class="road h"></div><div class="road v"></div>
+          <div class="block" style="left:8px;top:8px;width:40px;height:28px;"></div>
+          <div class="block" style="right:8px;bottom:8px;width:34px;height:24px;"></div>
+          <div class="pin available" style="left:22%;top:18%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="pin full" style="left:70%;top:54%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <div class="pin available" style="left:44%;top:60%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="legend">
+          <div class="item"><span class="dot av"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span>예약 가능</div>
+          <div class="item"><span class="dot fu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M6 6l12 12M18 6L6 18"/></svg></span>마감</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== THEME 3 ===================== -->
+  <section class="theme" style="
+    --primary:#F25C7A; --primary-fg:#FFFFFF; --secondary:#FCE3E7; --accent:#FF9A8B;
+    --background:#FFF7F8; --surface:#FFFFFF; --muted:#F4EAEC; --border:#F2D9DE;
+    --foreground:#2C2026; --muted-fg:#a18b91; --available:#15A06B; --destructive:#D83A4F;
+    --pin-available:#15A06B; --pin-full:#B3A9AC;">
+    <div class="theme-head">
+      <div class="name">선셋 코랄핑크</div>
+      <div class="register">감성적이고 화사한 · warm sunset coral-pink, 설레는 무드</div>
+    </div>
+    <div class="tokens">
+      <div class="tok-grid">
+        <div class="tok"><span class="swatch" style="background:#F25C7A"></span><div><b>primary</b><br><span>#F25C7A</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>primary-fg</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FCE3E7"></span><div><b>secondary</b><br><span>#FCE3E7</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FF9A8B"></span><div><b>accent</b><br><span>#FF9A8B</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFF7F8"></span><div><b>background</b><br><span>#FFF7F8</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>surface/card</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F4EAEC"></span><div><b>muted</b><br><span>#F4EAEC</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F2D9DE"></span><div><b>border</b><br><span>#F2D9DE</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#2C2026"></span><div><b>foreground</b><br><span>#2C2026</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#D83A4F"></span><div><b>destructive</b><br><span>#D83A4F</span></div></div>
+        <div class="tok-section-label">status</div>
+        <div class="tok"><span class="swatch" style="background:#15A06B"></span><div><b>pin-available</b><br><span>#15A06B</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#B3A9AC"></span><div><b>pin-full</b><br><span>#B3A9AC</span></div></div>
+      </div>
+    </div>
+    <div class="snippet-wrap">
+      <div class="snippet-label">Bottom sheet · 스터디룸 상세</div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-top">
+          <div>
+            <div class="room-name">강남 스터디라운지</div>
+            <div class="room-sub">영업시간 09:00–22:00</div>
+          </div>
+          <div class="heart"><svg viewBox="0 0 24 24" fill="#F25C7A" stroke="#F25C7A" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.5 2.2 5 5.7 5 8 5 9.3 6.4 12 9c2.7-2.6 4-4 6.3-4 3.5 0 5.1 3.5 3.7 6.7C19.5 16.4 12 21 12 21z"/></svg></div>
+        </div>
+        <div style="margin-top:10px"><span class="badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>예약 가능</span></div>
+        <div class="price-row"><span class="price">8,000원</span><small>/ 시간당</small></div>
+        <div class="cta-row">
+          <button class="btn-ghost">문의</button>
+          <button class="btn-primary">예약하기</button>
+        </div>
+        <div class="map">
+          <div class="road h"></div><div class="road v"></div>
+          <div class="block" style="left:8px;top:8px;width:40px;height:28px;"></div>
+          <div class="block" style="right:8px;bottom:8px;width:34px;height:24px;"></div>
+          <div class="pin available" style="left:22%;top:18%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="pin full" style="left:70%;top:54%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <div class="pin available" style="left:44%;top:60%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="legend">
+          <div class="item"><span class="dot av"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span>예약 가능</div>
+          <div class="item"><span class="dot fu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M6 6l12 12M18 6L6 18"/></svg></span>마감</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== THEME 4 ===================== -->
+  <section class="theme" style="
+    --primary:#C25E45; --primary-fg:#FFFFFF; --secondary:#F0E2DA; --accent:#D98E6A;
+    --background:#FBF6F2; --surface:#FFFFFF; --muted:#EFE7E1; --border:#E6D6CC;
+    --foreground:#2A211C; --muted-fg:#998a7f; --available:#3C8C5E; --destructive:#C0392B;
+    --pin-available:#3C8C5E; --pin-full:#A99E96;">
+    <div class="theme-head">
+      <div class="name">테라코타 클레이</div>
+      <div class="register">차분하고 단단한 · muted terracotta/clay, 믿음직한 따뜻함</div>
+    </div>
+    <div class="tokens">
+      <div class="tok-grid">
+        <div class="tok"><span class="swatch" style="background:#C25E45"></span><div><b>primary</b><br><span>#C25E45</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>primary-fg</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F0E2DA"></span><div><b>secondary</b><br><span>#F0E2DA</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#D98E6A"></span><div><b>accent</b><br><span>#D98E6A</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FBF6F2"></span><div><b>background</b><br><span>#FBF6F2</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>surface/card</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#EFE7E1"></span><div><b>muted</b><br><span>#EFE7E1</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#E6D6CC"></span><div><b>border</b><br><span>#E6D6CC</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#2A211C"></span><div><b>foreground</b><br><span>#2A211C</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#C0392B"></span><div><b>destructive</b><br><span>#C0392B</span></div></div>
+        <div class="tok-section-label">status</div>
+        <div class="tok"><span class="swatch" style="background:#3C8C5E"></span><div><b>pin-available</b><br><span>#3C8C5E</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#A99E96"></span><div><b>pin-full</b><br><span>#A99E96</span></div></div>
+      </div>
+    </div>
+    <div class="snippet-wrap">
+      <div class="snippet-label">Bottom sheet · 스터디룸 상세</div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-top">
+          <div>
+            <div class="room-name">강남 스터디라운지</div>
+            <div class="room-sub">영업시간 09:00–22:00</div>
+          </div>
+          <div class="heart"><svg viewBox="0 0 24 24" fill="#C25E45" stroke="#C25E45" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.5 2.2 5 5.7 5 8 5 9.3 6.4 12 9c2.7-2.6 4-4 6.3-4 3.5 0 5.1 3.5 3.7 6.7C19.5 16.4 12 21 12 21z"/></svg></div>
+        </div>
+        <div style="margin-top:10px"><span class="badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>예약 가능</span></div>
+        <div class="price-row"><span class="price">8,000원</span><small>/ 시간당</small></div>
+        <div class="cta-row">
+          <button class="btn-ghost">문의</button>
+          <button class="btn-primary">예약하기</button>
+        </div>
+        <div class="map">
+          <div class="road h"></div><div class="road v"></div>
+          <div class="block" style="left:8px;top:8px;width:40px;height:28px;"></div>
+          <div class="block" style="right:8px;bottom:8px;width:34px;height:24px;"></div>
+          <div class="pin available" style="left:22%;top:18%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="pin full" style="left:70%;top:54%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <div class="pin available" style="left:44%;top:60%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="legend">
+          <div class="item"><span class="dot av"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span>예약 가능</div>
+          <div class="item"><span class="dot fu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M6 6l12 12M18 6L6 18"/></svg></span>마감</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== THEME 5 ===================== -->
+  <section class="theme" style="
+    --primary:#FF8A1E; --primary-fg:#3A2400; --secondary:#FFF0D6; --accent:#FFC24D;
+    --background:#FFFCF4; --surface:#FFFFFF; --muted:#F4EDDF; --border:#F4E2C2;
+    --foreground:#28200F; --muted-fg:#9d8e6e; --available:#19A65A; --destructive:#E03A2E;
+    --pin-available:#19A65A; --pin-full:#B2AA9C;">
+    <div class="theme-head">
+      <div class="name">에너제틱 만다린</div>
+      <div class="register">경쾌하고 통통 튀는 · energetic mandarin, 젊고 캐주얼</div>
+    </div>
+    <div class="tokens">
+      <div class="tok-grid">
+        <div class="tok"><span class="swatch" style="background:#FF8A1E"></span><div><b>primary</b><br><span>#FF8A1E</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#3A2400;border-color:#3A2400"></span><div><b>primary-fg</b><br><span>#3A2400</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFF0D6"></span><div><b>secondary</b><br><span>#FFF0D6</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFC24D"></span><div><b>accent</b><br><span>#FFC24D</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFCF4"></span><div><b>background</b><br><span>#FFFCF4</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#FFFFFF"></span><div><b>surface/card</b><br><span>#FFFFFF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F4EDDF"></span><div><b>muted</b><br><span>#F4EDDF</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#F4E2C2"></span><div><b>border</b><br><span>#F4E2C2</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#28200F"></span><div><b>foreground</b><br><span>#28200F</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#E03A2E"></span><div><b>destructive</b><br><span>#E03A2E</span></div></div>
+        <div class="tok-section-label">status</div>
+        <div class="tok"><span class="swatch" style="background:#19A65A"></span><div><b>pin-available</b><br><span>#19A65A</span></div></div>
+        <div class="tok"><span class="swatch" style="background:#B2AA9C"></span><div><b>pin-full</b><br><span>#B2AA9C</span></div></div>
+      </div>
+    </div>
+    <div class="snippet-wrap">
+      <div class="snippet-label">Bottom sheet · 스터디룸 상세</div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-top">
+          <div>
+            <div class="room-name">강남 스터디라운지</div>
+            <div class="room-sub">영업시간 09:00–22:00</div>
+          </div>
+          <div class="heart"><svg viewBox="0 0 24 24" fill="#FF8A1E" stroke="#FF8A1E" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.5 2.2 5 5.7 5 8 5 9.3 6.4 12 9c2.7-2.6 4-4 6.3-4 3.5 0 5.1 3.5 3.7 6.7C19.5 16.4 12 21 12 21z"/></svg></div>
+        </div>
+        <div style="margin-top:10px"><span class="badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>예약 가능</span></div>
+        <div class="price-row"><span class="price">8,000원</span><small>/ 시간당</small></div>
+        <div class="cta-row">
+          <button class="btn-ghost">문의</button>
+          <button class="btn-primary">예약하기</button>
+        </div>
+        <div class="map">
+          <div class="road h"></div><div class="road v"></div>
+          <div class="block" style="left:8px;top:8px;width:40px;height:28px;"></div>
+          <div class="block" style="right:8px;bottom:8px;width:34px;height:24px;"></div>
+          <div class="pin available" style="left:22%;top:18%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="pin full" style="left:70%;top:54%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <div class="pin available" style="left:44%;top:60%;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="legend">
+          <div class="item"><span class="dot av"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span>예약 가능</div>
+          <div class="item"><span class="dot fu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M6 6l12 12M18 6L6 18"/></svg></span>마감</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

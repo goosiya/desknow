@@ -1,0 +1,52 @@
+# DeskNow CI — 게이트 호출 바인딩 (Story 1.9, AC3).
+#
+# ⚠️ 본 저장소는 현재 git 미초기화 상태다 → 이 워크플로는 "작성만" 되고 러너에서 실행되지
+#    않는다. 드리프트 *명령*(Layer A pytest / Layer B turbo test)은 로컬에서 실증 완료했다
+#    (Story 1.9 Task 6). git/원격(배포 준비) 구성 시점에 자동 활성화된다.
+#    본 파일은 이미 검증된 게이트를 호출하는 **얇은 바인딩**일 뿐 새 로직을 만들지 않는다.
+#
+# 범위(Story 1.9 Task 7): 드리프트 + 기존 정적 게이트(lint/check-types/ruff/mypy/pytest)로 한정.
+#   DB 의존 통합테스트는 라이브 DB 부재로 현행처럼 skip된다(배포 준비 시 서비스 컨테이너로 확장).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  js:
+    name: JS 게이트 (lint · check-types · drift Layer B)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # lint(직접 fetch 금지 가드, AC2) + check-types(세 표면 SDK 컴파일, AC1)
+      # + test(api-client check:drift = Layer B 드리프트, AC3).
+      - run: pnpm turbo run lint check-types test
+
+  api:
+    name: 백엔드 게이트 (ruff · mypy · pytest · drift Layer A)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen  # uv.lock 강제(JS 잡 --frozen-lockfile과 대칭)
+      - run: uv run ruff check .
+      - run: uv run mypy
+      # pytest는 Layer A 드리프트(test_openapi_export)를 포함한다(AC3).
+      # DB 의존 통합테스트는 DATABASE_URL 부재로 skip된다(현행 유지).
+      - run: uv run pytest

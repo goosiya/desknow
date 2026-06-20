@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "DeskNow API Client (generated SDK)",
+  "_comment": "생성 SDK 패키지용 strict tsconfig (Story 1.9). packages/ui 미러 — 무프레임워크(DOM/React lib 불필요), 순수 TS 소스. 생성물(src/generated/**)도 strict로 타입체크해 세 표면 컴파일 전에 SDK 자체 건전성을 확인한다.",
+  "compilerOptions": {
+    "target": "ES2022",
+    // ui 미러는 ES2022만이지만, 생성 fetch 클라이언트가 DOM/fetch 앰비언트 타입(BodyInit·
+    // Response·Headers 등)을 요구한다. 소비 표면(web=dom, mobile=RN)은 자체 lib로 해소하나,
+    // 패키지 자체 check-types를 위해 DOM lib를 추가한다(@hey-api fetch 클라이언트 표준 요건).
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "openapi-ts.config.ts"],
+  "exclude": ["node_modules"]
+}

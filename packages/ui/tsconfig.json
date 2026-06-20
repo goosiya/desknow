@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "DeskNow UI Tokens",
+  "_comment": "무프레임워크 토큰 패키지용 strict tsconfig (Story 1.6). DOM/React lib 불필요 — 순수 데이터 + node(테스트) 환경.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

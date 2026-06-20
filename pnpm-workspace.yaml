@@ -1,0 +1,16 @@
+# pnpm 워크스페이스 — JS/TS 서피스만 관리한다.
+# 주의: apps/api(파이썬)는 pnpm 워크스페이스 밖에서 uv로 느슨하게 공존한다(명시 제외).
+#       JS↔Python 결합은 코드 import가 아니라 OpenAPI 스키마(Story 1.9 SDK)로만 이루어진다.
+packages:
+  - "apps/web"
+  - "apps/admin"
+  - "apps/mobile"
+  - "packages/*"
+
+# Next.js(sharp 이미지 최적화 등) 네이티브 빌드 스크립트 승인 (pnpm 11 allowBuilds 맵).
+# 미승인 시 pnpm install이 "Ignored build scripts"로 경고한다.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  "@tailwindcss/oxide": true
+  esbuild: true

@@ -23,7 +23,10 @@ ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 pytestmark = pytest.mark.skipif(
     not TEST_DATABASE_URL or "supabase" in TEST_DATABASE_URL,
     # downgrade base = 전 테이블 DROP -> Supabase 등 데이터 보유 DB 금지(일회용 DB만).
-    reason="TEST_DATABASE_URL 미설정, 또는 Supabase 등 데이터 보유 DB(downgrade base=전 테이블 DROP 방지) — 일회용 DB에서만 실행.",
+    reason=(
+        "TEST_DATABASE_URL 미설정, 또는 Supabase 등 데이터 보유 DB"
+        "(downgrade base=전 테이블 DROP 방지) — 일회용 DB에서만 실행."
+    ),
 )
 
 
@@ -198,9 +201,9 @@ def test_create_room_service_fk_ordering_roundtrip(monkeypatch):
     """
     from datetime import time
 
+    from alembic.config import Config
     from sqlmodel import Session, select
 
-    from alembic.config import Config
     from alembic import command
     from app.auth.models import User
     from app.core.config import get_settings

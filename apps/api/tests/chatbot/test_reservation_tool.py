@@ -213,7 +213,8 @@ def _fake_radius_search(captured: dict[str, Any]) -> Any:
 
 
 def test_reservation_tool_near_me_radius_search(monkeypatch: pytest.MonkeyPatch) -> None:
-    # near_me=True + config 주입 좌표 → 반경 검색(기본 5km). region이 함께 와도 좌표 우선(region 무시).
+    # near_me=True + config 주입 좌표 → 반경 검색(기본 5km).
+    # region이 함께 와도 좌표 우선(region 무시).
     captured: dict[str, Any] = {}
     monkeypatch.setattr(tools_mod, "search_rooms", _fake_radius_search(captured))
     result = search_available_rooms.invoke(

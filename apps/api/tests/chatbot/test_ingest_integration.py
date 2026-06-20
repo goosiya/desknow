@@ -64,7 +64,8 @@ def test_real_ingest_then_similarity_search(tmp_path: Path, monkeypatch) -> None
 
         # 코사인 유사도 검색(<=>): 질의 임베딩으로 가장 가까운 청크가 적재한 문서여야 한다.
         # 바인드 파라미터는 문자열 리터럴이므로 (:q)::vector로 명시 캐스트해야 한다 —
-        # 캐스트 없으면 psycopg가 VARCHAR로 바인딩해 `vector <=> character varying` 연산자 부재로 실패.
+        # 캐스트 없으면 psycopg가 VARCHAR로 바인딩해 `vector <=> character varying`
+        # 연산자 부재로 실패.
         query_vector = embedder.embed_documents(["예약을 취소하고 싶어요"])[0]
         literal = "[" + ",".join(str(x) for x in query_vector) + "]"
         with Session(engine) as session:

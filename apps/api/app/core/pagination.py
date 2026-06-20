@@ -1,7 +1,9 @@
 """커서 페이징 코어 (F — 목록 무한스크롤). 모든 목록 엔드포인트가 공유하는 봉투 + 불투명 커서.
 
-**봉투(envelope):** 목록 응답을 배열이 아니라 ``CursorPage[T] = {items, next_cursor}`` 객체로 감싼다.
-``next_cursor``는 다음 페이지 시작점을 가리키는 **불투명 base64 토큰**으로, 클라이언트는 의미를 몰라도
+**봉투(envelope):** 목록 응답을 배열이 아니라 ``CursorPage[T] = {items, next_cursor}``
+객체로 감싼다.
+``next_cursor``는 다음 페이지 시작점을 가리키는 **불투명 base64 토큰**으로,
+클라이언트는 의미를 몰라도
 다음 요청의 ``?cursor=``에 그대로 echo하면 된다(``null``=마지막 페이지). 6개 목록 표면이 동일한
 ``useInfiniteQuery`` 패턴으로 통일되는 게 이 방식의 이유다.
 
@@ -21,12 +23,12 @@ import base64
 import binascii
 import json
 import uuid
+from collections.abc import Callable
 from datetime import datetime
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import and_, or_
-from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy import ColumnElement, and_, or_
 
 from app.core.errors import DomainError, ErrorCode
 from app.core.time import isoformat_utc
@@ -39,8 +41,10 @@ PAGE_SIZE_DEFAULT = 20
 PAGE_SIZE_MAX = 100
 
 
-class CursorPage(BaseModel, Generic[T]):
-    """커서 페이징 응답 봉투. ``items``=이번 페이지, ``next_cursor``=다음 페이지 토큰(없으면 None)."""
+# pydantic 제네릭 모델 — PEP695 type-param 전환은 pydantic/mypy 호환 위해 보류(UP046).
+class CursorPage(BaseModel, Generic[T]):  # noqa: UP046
+    """커서 페이징 응답 봉투. ``items``=이번 페이지,
+    ``next_cursor``=다음 페이지 토큰(없으면 None)."""
 
     items: list[T]
     next_cursor: str | None = None
@@ -50,13 +54,13 @@ def _invalid_cursor() -> DomainError:
     return DomainError(ErrorCode.VALIDATION_ERROR, "잘못된 커서입니다.")
 
 
-def _encode(payload: dict) -> str:
+def _encode(payload: dict[str, Any]) -> str:
     """payload dict → URL-safe base64 문자열(불투명 커서)."""
     raw = json.dumps(payload, separators=(",", ":"))
     return base64.urlsafe_b64encode(raw.encode()).decode()
 
 
-def _decode(cursor: str) -> dict:
+def _decode(cursor: str) -> dict[str, Any]:
     """불투명 커서 → payload dict. 손상/위변조면 422."""
     try:
         raw = base64.urlsafe_b64decode(cursor.encode()).decode()
@@ -89,15 +93,16 @@ def decode_keyset(cursor: str) -> tuple[datetime, uuid.UUID]:
 
 
 def keyset_predicate(
-    created_col: InstrumentedAttribute,
-    id_col: InstrumentedAttribute,
+    created_col: Any,
+    id_col: Any,
     cursor: str | None,
-):
+) -> ColumnElement[bool] | None:
     """커서가 있으면 ``(created_at, id) < cursor`` row-value 조건을 만든다(없으면 None).
 
     ``tuple_(...) < (...)`` 대신 ``or_(created < ts, and_(created == ts, id < id))``로 전개한다 —
     모든 백엔드에서 동작하고 정렬(``created desc, id desc``)과 정확히 짝이 맞는다(동일 created_at
-    타이브레이커=id). 호출처가 ``select(...).where(pred).order_by(created.desc(), id.desc())``로 쓴다.
+    타이브레이커=id). 호출처가
+    ``select(...).where(pred).order_by(created.desc(), id.desc())``로 쓴다.
     """
     if cursor is None:
         return None
@@ -109,8 +114,12 @@ def keyset_predicate(
 
 
 def keyset_page(
-    rows: list, limit: int, *, created, ident
-) -> tuple[list, str | None]:
+    rows: list[Any],
+    limit: int,
+    *,
+    created: Callable[[Any], Any],
+    ident: Callable[[Any], Any],
+) -> tuple[list[Any], str | None]:
     """``limit+1`` 개를 조회한 ``rows``에서 앞 ``limit``개를 페이지로 잘라내고 next_cursor를 만든다.
 
     ``limit+1``번째 행이 있으면(=더 있음) 페이지 마지막 행의 ``(created, ident)``로 next_cursor를

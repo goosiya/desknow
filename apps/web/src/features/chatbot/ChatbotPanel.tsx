@@ -23,10 +23,9 @@ function useKeyboardInset(active: boolean): number {
   const [inset, setInset] = useState(0);
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
-    if (!active || !vv) {
-      setInset(0);
-      return;
-    }
+    // 비활성/미지원이면 리스너 없이 종료 — 반환값은 아래에서 0으로 파생한다(effect 내 동기
+    // setInset(0) 직접 호출은 set-state-in-effect 규칙 위반이라 제거).
+    if (!active || !vv) return;
     const update = () => {
       // 레이아웃 높이 - (보이는 높이 + 보이는 영역 상단 오프셋) = 키패드가 하단을 가린 높이.
       const covered = window.innerHeight - vv.height - vv.offsetTop;
@@ -41,7 +40,8 @@ function useKeyboardInset(active: boolean): number {
       vv.removeEventListener("scroll", update);
     };
   }, [active]);
-  return inset;
+  // 비활성이면 0(파생) — active 일 때만 effect 가 리스너로 inset 을 갱신한다.
+  return active ? inset : 0;
 }
 
 // 첫 진입 제안 칩(EXPERIENCE.md) — 탭=전송. 답변 정확도/환각은 7.3 결함 아님(툴·근거=7.5/7.6).

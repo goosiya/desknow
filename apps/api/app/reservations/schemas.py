@@ -186,7 +186,8 @@ class ReservationListItem(BaseModel):
     has_review: bool  # 예약별 후기 작성 여부(Story 5.5 — 예약현황 후기 작성 게이팅·죽은 버튼 0).
     # 라우터가 reviews.service로 단일 쿼리 합성(N+1 금지·room_name 옆).
     # ★본인이 작성한 후기(별점·텍스트·작성일 + 사장님 답글) — 작성한 예약에만 채워지고 아니면 None.
-    #   예약현황에서 "후기 완료"만 보여주던 것을 실제 후기 내용+답글까지 보이도록 추가(KTH 2026-06-19).
+    #   예약현황에서 "후기 완료"만 보여주던 것을 실제 후기 내용+답글까지 보이도록
+    #   추가(KTH 2026-06-19).
     #   has_review와 정합(review is not None ⟺ has_review). 본인 표면이라 익명 제약 무관(자기 후기).
     review: ReviewListItem | None = None
 

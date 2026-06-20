@@ -110,7 +110,8 @@ def build_graph(model: BaseChatModel | None = None) -> ChatGraph:
 
     def call_model(state: MessagesState) -> dict[str, list[BaseMessage]]:
         # 매 호출마다 현재 KST 날짜를 주입한 시스템 프롬프트를 prepend한다(상대/부분 날짜 환산용 —
-        # "오늘"·"내일"·"19일"을 정확한 ISO로 환산해 예약검색 툴에 넘기게 한다. 영속 0 — 날짜 박제 방지).
+        # "오늘"·"내일"·"19일"을 정확한 ISO로 환산해 예약검색 툴에 넘기게 한다.
+        # 영속 0 — 날짜 박제 방지).
         messages = [SystemMessage(content=build_system_prompt()), *state["messages"]]
         response = bound_model.invoke(messages)
         return {"messages": [response]}

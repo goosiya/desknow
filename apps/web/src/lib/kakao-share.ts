@@ -44,19 +44,28 @@ function injectScript(jsKey: string): Promise<typeof Kakao> {
         // 서브표면 없는 스텁 `window.Kakao` 를 심으면 `.isInitialized`/`.init`/`.Share` 가 없다.
         // top-level 만 보던 가드를 **실제 호출 서브표면**까지 확장해 명시 reject 한다(maps 로더의
         // `window.kakao?.maps` 서브객체 가드 동형 — AC4 graceful degrade).
+        // 스텁 가드(광고차단·차단 응답): top-level init/isInitialized 는 init 전에도 존재해야 한다.
         if (
           typeof window.Kakao?.isInitialized !== "function" ||
-          typeof window.Kakao.init !== "function" ||
-          typeof window.Kakao.Share?.sendDefault !== "function"
+          typeof window.Kakao.init !== "function"
         ) {
           reject(
             new Error("카카오 공유 SDK 가 초기화되지 않았습니다 (잘못된 키 또는 차단된 응답)."),
           );
           return;
         }
-        // 멱등 초기화 — 이미 init 됐으면 다시 호출하지 않는다(중복 init 경고 회피).
+        // ⚠️ init 을 먼저 한다 — `Kakao.Share` 네임스페이스는 `init()` *이후*에 생성된다(SDK 2.7.x
+        // 실측: init 전 Kakao.Share=undefined). 멱등(이미 init 됐으면 재호출 안 함 — 중복 init 경고 회피).
         if (!window.Kakao.isInitialized()) {
           window.Kakao.init(jsKey);
+        }
+        // init 후에야 Share 서브표면이 존재한다 — 이제 검사한다(스텁/차단 응답이면 여기서 reject).
+        // (init 전에 검사하면 정상 SDK 도 항상 실패 → 공유 영구 불가였던 버그를 바로잡음.)
+        if (typeof window.Kakao.Share?.sendDefault !== "function") {
+          reject(
+            new Error("카카오 공유 SDK 가 초기화되지 않았습니다 (잘못된 키 또는 차단된 응답)."),
+          );
+          return;
         }
         resolve(window.Kakao);
       } catch (err: unknown) {

@@ -55,7 +55,8 @@ function buildLocationMapHtml(
     background: #D86E0A; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(40,32,15,0.35);
   }
 </style>
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false"></script>
+<!-- https 고정(스탠드얼론 빌드 Android cleartext 차단 회피 — mapHtml.ts 주석 참조). -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false"></script>
 </head>
 <body>
 <div id="map"></div>

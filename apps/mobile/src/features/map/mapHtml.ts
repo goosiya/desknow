@@ -40,7 +40,10 @@ export function buildMapHtml(
   }
   .pin > span { transform: rotate(45deg); color: #fff; font-size: 14px; font-weight: 700; line-height: 1; }
 </style>
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false"></script>
+<!-- https 고정: protocol-relative(//)는 baseUrl(http://localhost:3000) 따라 http로 로드돼,
+     스탠드얼론 빌드(preview/production)의 Android cleartext 차단에 막힌다(dev 빌드만 cleartext 허용).
+     실기기 빌드에서 SDK가 로드되려면 https 명시 필수(baseUrl은 카카오 도메인 매칭용이라 http 유지). -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false"></script>
 </head>
 <body>
 <div id="map"></div>

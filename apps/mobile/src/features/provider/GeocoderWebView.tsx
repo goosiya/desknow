@@ -34,7 +34,8 @@ function buildGeocoderHtml(jsKey: string): string {
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false&libraries=services"></script>
+<!-- https 고정(스탠드얼론 빌드 Android cleartext 차단 회피 — mapHtml.ts 주석 참조). -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${jsKey}&autoload=false&libraries=services"></script>
 </head>
 <body>
 <script>

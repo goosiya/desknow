@@ -72,13 +72,13 @@ export function ShareButton({
         </ThemedText>
       </Pressable>
       {failed ? (
-        <ThemedText
-          accessibilityRole="alert"
-          type="caption"
-          themeColor="textSecondary"
-        >
-          지금은 공유를 할 수 없어요. 잠시 후 다시 해주세요.
-        </ThemedText>
+        // 절대배치(흐름 밖) — 버튼 행 높이를 안 늘려 형제 취소 버튼이 안 밀리고 카드 안에 머문다
+        // (즐겨찾기 안내 팝오버와 동일 패턴). 왼쪽으로 열어 본문 위에 겹친다(좁은 카드 밖으로 안 넘침).
+        <View accessibilityRole="alert" style={styles.failHint}>
+          <ThemedText type="caption" themeColor="textSecondary">
+            지금은 공유를 할 수 없어요. 잠시 후 다시 해주세요.
+          </ThemedText>
+        </View>
       ) : null}
     </View>
   );
@@ -99,6 +99,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.card,
   },
   buttonDisabled: { opacity: 0.5 },
+  // 공유 실패 안내 — 절대배치(왼쪽·상단정렬). 흐름 밖이라 버튼 행을 안 늘리고, 본문 위에 겹쳐 카드
+  // 안에 머문다(즐겨찾기 hintLeft 동형). 좁은 카드 밖으로 넘치지 않게 폭 고정.
+  failHint: {
+    position: 'absolute',
+    right: '100%',
+    top: 0,
+    marginRight: Spacing[1],
+    width: 180,
+    zIndex: 50,
+    padding: Spacing[2],
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.card,
+  },
   // 공유 아이콘(Share2 등가) — 16px 박스 좌표는 lucide 24그리드를 16으로 스케일한 값(점 r2, 선 2획).
   icon: { width: 16, height: 16, position: 'relative' },
   iconDot: {

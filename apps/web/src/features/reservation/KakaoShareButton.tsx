@@ -41,7 +41,9 @@ export function KakaoShareButton({ roomName, slotStarts, roomId }: KakaoShareBut
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    // relative wrapper — 실패 안내는 절대배치(흐름 밖)라 버튼 행 높이를 늘리지 않는다(형제 취소
+    // 버튼 정렬이 깨지던 문제 수정). FavoriteButton 안내 팝오버와 동일 패턴.
+    <div className="relative inline-flex">
       <button
         type="button"
         onClick={handleShare}
@@ -53,7 +55,10 @@ export function KakaoShareButton({ roomName, slotStarts, roomId }: KakaoShareBut
         공유
       </button>
       {failed ? (
-        <p role="status" className="text-xs leading-[1.6] text-muted-foreground">
+        <p
+          role="status"
+          className="absolute right-full top-1/2 z-50 mr-1 w-44 -translate-y-1/2 rounded-md border border-border bg-card p-2 text-xs leading-[1.6] text-muted-foreground shadow-sheet"
+        >
           지금은 공유를 할 수 없어요. 잠시 후 다시 해주세요.
         </p>
       ) : null}

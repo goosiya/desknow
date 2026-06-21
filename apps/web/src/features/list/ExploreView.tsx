@@ -95,6 +95,9 @@ export function ExploreView() {
   // '내 반경' 재중심 신호 — 클릭마다 증가시켜 MapView 가 현 위치로 중심을 다시 옮기게 한다(좌표가
   // 동일해도 effect 가 재실행되도록 nonce 사용). 클릭 시 위치도 갱신(이동했을 수 있음)한다.
   const [recenterNonce, setRecenterNonce] = useState(0);
+  // 거부(denied) 안내 카드 펼침 상태 — 칩 클릭 시 '자물쇠 → 위치 → 허용' 수동 설정 경로를 펼친다.
+  // 브라우저는 denied 상태에서 네이티브 권한 팝업/설정창을 코드로 다시 못 열어, 안내만이 유일한 길이다.
+  const [geoGuideOpen, setGeoGuideOpen] = useState(false);
 
   // 수동 토글/딥링크 비파괴 가드: true 면 위치 신호가 뷰를 자동 전환하지 않는다. 딥링크(더보기)는
   // 의도된 진입이라 처음부터 잠근다. (위치 거부 자동 우회는 지도 UX 개편으로 제거 — 지도는 기본
@@ -216,27 +219,49 @@ export function ExploreView() {
             // pointer-events-none 래퍼 + auto 칩: 칩 밖 지도 영역은 그대로 드래그 가능, 칩만 클릭.
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-3">
               {geoPermission === "prompt" ? (
+                // prompt: 클릭하면 getCurrentPosition → 브라우저 네이티브 권한 팝업이 뜬다. 문구를
+                // "여기를 눌러"로 보강 — 칩을 눌러야 한다는 걸 모르는 사용자를 위해(KTH 2026-06-21).
                 <button
                   type="button"
                   onClick={geoLocate}
                   className="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-2 text-sm text-secondary-foreground shadow-sheet hover:bg-secondary/80"
                 >
                   <LocateFixed className="size-4 shrink-0" aria-hidden />
-                  위치 권한을 허용하면 내 위치로 지도를 옮겨드려요.
+                  위치 권한이 꺼져 있어요. 여기를 눌러 위치 권한을 허용해 주세요.
                 </button>
               ) : (
-                // denied/미지원 — 클릭 시 재확인(브라우저 권한이 바뀌었으면 측정, 아니면 즉시 실패해
-                // 그대로 — 탭 복귀 자동 재확인과 함께 즉시 반영을 보강한다). ⚠️ 카피는 모바일 앱과
-                // 의도적으로 다르다(웹='위치 권한을 허용해 주세요' / 앱='앱이나 휴대폰의...' — KTH 지시
-                // 2026-06-20). 재-동기화 금지.
-                <button
-                  type="button"
-                  onClick={geoRefresh}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-2 text-sm text-secondary-foreground shadow-sheet hover:bg-secondary/80"
-                >
-                  <LocateFixed className="size-4 shrink-0" aria-hidden />
-                  위치 권한이 꺼져 있어요. 위치 권한을 허용해 주세요.
-                </button>
+                // denied/미지원 — 네이티브 팝업이 다시 안 뜨므로(브라우저 차단), 칩 클릭 시 수동 설정
+                // 경로('자물쇠 → 위치 → 허용')를 카드로 펼쳐 안내한다(코드로 설정창을 못 연다). 설정 후
+                // 탭 복귀 시 focus 재확인이 자동 반영하고, '새로고침'(geoRefresh)으로도 즉시 재확인한다.
+                // ⚠️ 카피는 모바일 앱과 의도적으로 다르다(웹 전용 — KTH 2026-06-20). 재-동기화 금지.
+                <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2">
+                  <button
+                    type="button"
+                    aria-expanded={geoGuideOpen}
+                    onClick={() => setGeoGuideOpen((open) => !open)}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-2 text-sm text-secondary-foreground shadow-sheet hover:bg-secondary/80"
+                  >
+                    <LocateFixed className="size-4 shrink-0" aria-hidden />
+                    위치 권한이 꺼져 있어요. 여기를 눌러 위치 권한을 허용해 주세요.
+                  </button>
+                  {geoGuideOpen && (
+                    <div className="rounded-md bg-card p-3 text-left text-sm text-card-foreground shadow-sheet">
+                      <p className="mb-1.5 font-medium">위치 권한 허용 방법</p>
+                      <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
+                        <li>주소창의 자물쇠(🔒) 아이콘을 누르세요.</li>
+                        <li>‘위치’ 권한을 ‘허용’으로 바꿔주세요.</li>
+                        <li>아래 ‘새로고침’을 누르세요.</li>
+                      </ol>
+                      <button
+                        type="button"
+                        onClick={geoRefresh}
+                        className="mt-2 inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        새로고침
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

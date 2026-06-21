@@ -244,7 +244,7 @@ describe("ExploreView 지도 위치 권한 (개편 2026-06-18 — 선확인·내
     // 토글 아래 안내(허용 유도) 버튼.
     expect(
       screen.getByRole("button", {
-        name: /위치 권한을 허용하면 내 위치로 지도를 옮겨드려요/,
+        name: /여기를 눌러 위치 권한을 허용해 주세요/,
       }),
     ).toBeInTheDocument();
     // 아직 권한 없으니 '내 반경' 버튼은 없다.
@@ -258,7 +258,7 @@ describe("ExploreView 지도 위치 권한 (개편 2026-06-18 — 선확인·내
     renderExplore();
 
     const hint = await screen.findByRole("button", {
-      name: /위치 권한을 허용하면 내 위치로 지도를 옮겨드려요/,
+      name: /여기를 눌러 위치 권한을 허용해 주세요/,
     });
     await user.click(hint);
 
@@ -285,6 +285,22 @@ describe("ExploreView 지도 위치 권한 (개편 2026-06-18 — 선확인·내
     expect(
       await screen.findByText(/위치 권한이 꺼져 있어요/),
     ).toBeInTheDocument();
+  });
+
+  it("위치 거부 시 안내 칩을 누르면 설정 방법(자물쇠) 카드를 펼친다", async () => {
+    const user = userEvent.setup();
+    mockGeolocation("denied");
+    renderExplore();
+
+    const chip = await screen.findByRole("button", {
+      name: /여기를 눌러 위치 권한을 허용해 주세요/,
+    });
+    // 펼치기 전엔 단계 안내가 없다.
+    expect(screen.queryByText(/자물쇠/)).not.toBeInTheDocument();
+    await user.click(chip);
+    // 클릭 시 '자물쇠 → 위치 → 허용' 단계 + 새로고침 버튼이 펼쳐진다.
+    expect(await screen.findByText(/자물쇠/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "새로고침" })).toBeInTheDocument();
   });
 
   it("위치 허용 시 지도 유지 + '내 반경' 버튼을 보인다", async () => {

@@ -11,10 +11,18 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api-production-b650.up.railway.app",
+        "EXPO_PUBLIC_KAKAO_JS_KEY": "a07a775962c68507ea2c16041d7efd88"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api-production-b650.up.railway.app",
+        "EXPO_PUBLIC_KAKAO_JS_KEY": "a07a775962c68507ea2c16041d7efd88"
+      }
     }
   },
   "submit": {

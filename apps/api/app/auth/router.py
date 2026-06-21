@@ -28,6 +28,7 @@ from app.auth.schemas import (
     TokenResponse,
     UserPublic,
 )
+from app.core.config import get_settings
 from app.core.db import get_session
 from app.core.errors import DomainError, ErrorCode, ErrorResponse
 from app.core.security import (
@@ -47,13 +48,17 @@ def _set_auth_cookies(response: Response, tokens: TokenResponse) -> None:
 
     refresh 쿠키 path는 ``/api/v1/auth``로 한정해 노출을 최소화한다(refresh/logout만 전송).
     access는 모든 보호 엔드포인트가 읽도록 ``path="/"``.
+
+    ``samesite``는 설정값(``AUTH_COOKIE_SAMESITE``)을 따른다 — dev(localhost same-site)는 "lax",
+    배포(web/admin↔api cross-site)는 "none"이어야 cross-origin fetch에 쿠키가 실린다.
     """
+    samesite = get_settings().AUTH_COOKIE_SAMESITE
     response.set_cookie(
         ACCESS_COOKIE_NAME,
         tokens.access_token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite=samesite,
         path="/",
         max_age=int(ACCESS_TOKEN_TTL.total_seconds()),
     )
@@ -62,16 +67,19 @@ def _set_auth_cookies(response: Response, tokens: TokenResponse) -> None:
         tokens.refresh_token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite=samesite,
         path="/api/v1/auth",
         max_age=int(REFRESH_TOKEN_TTL.total_seconds()),
     )
 
 
 def _clear_auth_cookies(response: Response) -> None:
-    """인증 쿠키를 제거한다(만료 Set-Cookie 발행 — path가 set과 일치해야 한다)."""
-    response.delete_cookie(ACCESS_COOKIE_NAME, path="/")
-    response.delete_cookie(REFRESH_COOKIE_NAME, path="/api/v1/auth")
+    """인증 쿠키를 제거한다(만료 Set-Cookie 발행 — path·속성이 set과 일치해야 브라우저가 지운다)."""
+    samesite = get_settings().AUTH_COOKIE_SAMESITE
+    response.delete_cookie(ACCESS_COOKIE_NAME, path="/", secure=True, samesite=samesite)
+    response.delete_cookie(
+        REFRESH_COOKIE_NAME, path="/api/v1/auth", secure=True, samesite=samesite
+    )
 
 
 @router.post(

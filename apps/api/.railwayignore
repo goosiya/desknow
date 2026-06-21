@@ -1,0 +1,9 @@
+# railway up 업로드 컨텍스트에서 제외(빌드 무관·비밀·로컬 캐시)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# dev 비밀(.env)은 절대 업로드 금지 — 운영값은 Railway 서비스 환경변수로 주입한다
+.env

@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -55,9 +56,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 # 웹 서피스 origin (Story 1.2: web=3000, admin=3001). 모바일은 네이티브라 CORS 무관.
+# 배포 origin은 ``EXTRA_CORS_ORIGINS``(쉼표 구분) 환경변수로 주입한다 — 웹/어드민이 API를
+# cross-origin 직접 호출(credentials:"include")하는 구조라 운영 web/admin 도메인을 화이트리스트해야
+# 한다. import 시점에 ``os.environ``을 직접 읽어(``get_settings()``의 fail-fast를 import에 묶지
+# 않음) ``app.main`` import-only 도구·테스트(test_main)의 안전성을 유지한다.
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
+    *(o.strip() for o in os.environ.get("EXTRA_CORS_ORIGINS", "").split(",") if o.strip()),
 ]
 
 API_V1_PREFIX = "/api/v1"

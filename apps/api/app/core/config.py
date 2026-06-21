@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import sys
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import ValidationError, field_validator
 from pydantic_core import ErrorDetails
@@ -57,10 +58,17 @@ OPTIONAL_KEYS: list[str] = [
     # 비밀/식별정보라 NON_SECRET_KEYS 미포함(마스킹 유지).
     "SEED_ADMIN_EMAIL",
     "SEED_ADMIN_PASSWORD",
+    # 쿠키 cross-origin 정책(배포) — 비밀 아님. 미설정 시 "lax"(dev same-site).
+    "AUTH_COOKIE_SAMESITE",
 ]
 
 # 비밀이 아니므로 진단 시 전체 값 표시를 허용하는 키
-NON_SECRET_KEYS: set[str] = {"EMBEDDING_MODEL", "LLM_PROVIDER", "LLM_MODEL"}
+NON_SECRET_KEYS: set[str] = {
+    "EMBEDDING_MODEL",
+    "LLM_PROVIDER",
+    "LLM_MODEL",
+    "AUTH_COOKIE_SAMESITE",
+}
 
 
 class Settings(BaseSettings):
@@ -98,6 +106,12 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None  # 멀티 LLM best-effort
     GOOGLE_AI_API_KEY: str | None = None  # 멀티 LLM best-effort
     KAKAO_NATIVE_APP_KEY: str | None = None  # RN 앱 카카오 공유
+
+    # ── 쿠키 cross-origin 정책 (배포 — cross-site web↔api) ──
+    # 웹/어드민이 API를 cross-origin 직접 호출(SDK + credentials:"include")하므로, 배포(web/admin과
+    # api가 서로 다른 site)에서는 SameSite=None이어야 인증 쿠키가 fetch에 실린다. dev(localhost
+    # same-site)는 기본 "lax"로 충분. secure는 set_cookie에서 항상 True — None은 Secure 전제라 정합.
+    AUTH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
     # ── 시드 관리자 부트스트랩 (Story 8.1 — scripts/seed_admin.py 전용) ──
     # 앱·통합테스트는 이 키 없이도 기동해야 하므로 선택 키(Optional+None)다. 시드 스크립트가
@@ -184,6 +198,18 @@ class Settings(BaseSettings):
     def _default_llm_model_if_blank(cls, v: str) -> str:
         """빈 값이면 기준 OpenAI 모델 기본값으로 복원한다."""
         return v if v and v.strip() else DEFAULT_LLM_MODEL
+
+    @field_validator("AUTH_COOKIE_SAMESITE", mode="before")
+    @classmethod
+    def _normalize_samesite(cls, v: object) -> object:
+        """SameSite 값을 소문자로 정규화한다("None"/"Lax" 입력도 허용 → Literal 검증 통과).
+
+        빈 문자열(``.env``의 ``AUTH_COOKIE_SAMESITE=``)은 기본값("lax")으로 복원한다.
+        """
+        if isinstance(v, str):
+            s = v.strip().lower()
+            return s if s else "lax"
+        return v
 
 
 def _assert_key_lists_match_model() -> None:

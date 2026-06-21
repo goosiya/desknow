@@ -32,7 +32,7 @@ type MapStatus = 'loading' | 'ready' | 'error';
 
 // 카카오 콘솔에 등록된 WebView origin(JS 키 화이트리스트) — 9.1 MapWebView 상수 동형(deferred 회수
 // 후보=env화 EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN).
-const KAKAO_WEBVIEW_ORIGIN = 'http://localhost:3000';
+const KAKAO_WEBVIEW_ORIGIN = 'https://localhost:3000'; // https 필수(스탠드얼론 cleartext 차단 — MapWebView.tsx 주석)
 
 /** 단일 핀 카카오맵 HTML(buildMapHtml 패턴 — 핀 탭 없음·ready/error 브릿지). interactive=true면 줌/팬 허용. */
 function buildLocationMapHtml(

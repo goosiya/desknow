@@ -15,7 +15,7 @@ import type { GeocodeResult } from "@/lib/api-client";
 //    9.1 MapWebView 상수 동형(deferred 회수 후보=env화 EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN).
 
 // 카카오 콘솔 등록 WebView origin(JS 키 화이트리스트) — 9.1 MapWebView/RoomLocationMap 동형.
-const KAKAO_WEBVIEW_ORIGIN = "http://localhost:3000";
+const KAKAO_WEBVIEW_ORIGIN = "https://localhost:3000"; // https 필수(스탠드얼론 cleartext 차단 — MapWebView.tsx 주석)
 
 type GeocoderWebViewProps = {
   // 검색어. nonce가 바뀔 때마다 이 query로 addressSearch를 실행한다.

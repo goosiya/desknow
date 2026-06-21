@@ -26,7 +26,10 @@ const SEOUL_LNG = 126.978;
 const INITIAL_MAP_LEVEL = 5;
 // 카카오 콘솔에 등록된 WebView origin(JS 키 화이트리스트). 네이티브는 이 origin으로 SDK가 수용된다.
 // (Expo Web=iframe 환경은 부모 origin이라 콘솔 미등록이면 거부 → AC5 graceful degrade.)
-const KAKAO_WEBVIEW_ORIGIN = 'http://localhost:3000';
+// ⚠️ https 필수: http면 스탠드얼론 빌드(Android cleartext 기본 차단)에서 SDK의 2차 라이브러리/타일
+// (protocol-relative) 로드가 막혀 kakao.maps.load 콜백이 안 와 지도가 'loading'에서 멈춘다(dev 빌드만
+// cleartext 허용). 카카오 콘솔 [Web]에 https://localhost:3000도 등록돼 있어야 한다.
+const KAKAO_WEBVIEW_ORIGIN = 'https://localhost:3000';
 
 type MapStatus = 'loading' | 'ready' | 'error';
 

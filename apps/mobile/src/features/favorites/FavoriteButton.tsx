@@ -14,7 +14,15 @@ import { useFavoriteIds, useToggleFavorite } from './useFavorites';
 // ⚠️ 색 단독 금지: 채움(♥)/외곽선(♡) 형태 + 색 + a11y selected 3중 신호.
 // ⚠️ 미로그인 게이팅(AC4): 하트는 보이되 클릭 시 토글하지 않고 "로그인하면 저장돼요" 안내(옵티미스틱
 //    호출 안 함). 막다른 화면 금지 — 안내에 로그인 링크 + 닫기를 둔다.
-export function FavoriteButton({ roomId }: { roomId: string }) {
+// hintPlacement: 안내 팝오버 배치. 기본 "below"(하트 아래 — 시트/상세). 목록 카드는 높이가 짧아
+// 아래로 열면 카드 밖으로 넘치므로 "left"(하트 왼쪽·수직중앙 — 카드 안)로 연다.
+export function FavoriteButton({
+  roomId,
+  hintPlacement = 'below',
+}: {
+  roomId: string;
+  hintPlacement?: 'below' | 'left';
+}) {
   const { data: user, isError: sessionError } = useSession();
   const isLoggedIn = !!user;
   const { data: favoriteIds } = useFavoriteIds();
@@ -58,7 +66,10 @@ export function FavoriteButton({ roomId }: { roomId: string }) {
       </Pressable>
 
       {showLoginHint && !isLoggedIn ? (
-        <View accessibilityRole="alert" style={styles.hint}>
+        <View
+          accessibilityRole="alert"
+          style={[styles.hint, hintPlacement === 'left' && styles.hintLeft]}
+        >
           <ThemedText type="bodySm" themeColor="cardForeground">
             로그인하면 저장돼요.
           </ThemedText>
@@ -112,6 +123,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.border,
     backgroundColor: Colors.light.card,
+  },
+  // 목록 전용: 하트 왼쪽·수직중앙으로 연다(카드 안). top/right를 덮어쓰고 transform으로 세로 중앙.
+  // (하트가 카드 세로중앙이라, 팝오버를 하트 중앙에 맞추면 카드 안에 들어온다.)
+  hintLeft: {
+    top: '50%',
+    right: '100%',
+    marginRight: Spacing[1],
+    transform: [{ translateY: -36 }],
   },
   hintActions: {
     flexDirection: 'row',

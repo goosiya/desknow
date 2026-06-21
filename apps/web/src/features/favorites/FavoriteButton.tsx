@@ -14,7 +14,15 @@ import { Heart } from "lucide-react";
 import { useSession } from "@/features/auth/useSession";
 import { useFavoriteIds, useToggleFavorite } from "./useFavorites";
 
-export function FavoriteButton({ roomId }: { roomId: string }) {
+// hintPlacement: 안내 팝오버 배치. 기본 "below"(하트 아래 — 시트/상세). 목록 카드는 높이가 짧아
+// 아래로 열면 카드 밖으로 넘치므로 "left"(하트 왼쪽·수직중앙 — 카드 안)로 연다.
+export function FavoriteButton({
+  roomId,
+  hintPlacement = "below",
+}: {
+  roomId: string;
+  hintPlacement?: "below" | "left";
+}) {
   const { data: user, isError: sessionError } = useSession();
   const isLoggedIn = !!user;
   const { data: favoriteIds } = useFavoriteIds();
@@ -74,7 +82,11 @@ export function FavoriteButton({ roomId }: { roomId: string }) {
         // 미로그인 안내(AC4 — 막다른 화면 금지: 닫기 + 로그인 링크). 전용 로그인 화면은 별도 스토리.
         <div
           role="status"
-          className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border bg-card p-3 text-xs shadow-sheet"
+          className={`absolute z-50 w-48 rounded-md border border-border bg-card p-3 text-xs shadow-sheet ${
+            hintPlacement === "left"
+              ? "right-full top-1/2 mr-1 -translate-y-1/2"
+              : "right-0 top-full mt-1"
+          }`}
         >
           <p className="leading-[1.6] text-card-foreground">
             로그인하면 저장돼요.

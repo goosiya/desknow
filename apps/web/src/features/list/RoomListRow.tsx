@@ -74,7 +74,8 @@ export function RoomListRow({ room, onSelect }: RoomListRowProps) {
           </span>
         ) : null}
       </button>
-      <FavoriteButton roomId={room.room_id} />
+      {/* 목록 카드는 높이가 짧아 안내 팝오버를 하트 왼쪽(카드 안)으로 연다(아래로 열면 카드 밖 넘침). */}
+      <FavoriteButton roomId={room.room_id} hintPlacement="left" />
     </li>
   );
 }

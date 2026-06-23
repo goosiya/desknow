@@ -68,6 +68,25 @@ describe("SlotGrid 탭 선택 (AC1)", () => {
     expect(slotButton("16:00")).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("실브라우저 순서(pointerdown→pointerup→click)로도 둘째 탭이 구간 확장한다 (회귀)", () => {
+    // 실제 브라우저는 모든 click 앞에 pointerdown/up 이 붙는다. 과거 handlePointerDown 이
+    // anchorRef 를 매번 덮어써 둘째 탭이 단일 선택으로 무너졌다(jsdom click-only 테스트는 못 잡음).
+    render(<Harness slots={makeSlots(["available", "available", "available"])} />);
+
+    // 시작 슬롯 탭(14:00)
+    fireEvent.pointerDown(slotButton("14:00"), { pointerId: 1 });
+    fireEvent.pointerUp(slotButton("14:00"), { pointerId: 1 });
+    fireEvent.click(slotButton("14:00"));
+    // 끝 슬롯 탭(16:00) → 사이(15:00) 자동 채움
+    fireEvent.pointerDown(slotButton("16:00"), { pointerId: 1 });
+    fireEvent.pointerUp(slotButton("16:00"), { pointerId: 1 });
+    fireEvent.click(slotButton("16:00"));
+
+    expect(slotButton("14:00")).toHaveAttribute("aria-pressed", "true");
+    expect(slotButton("15:00")).toHaveAttribute("aria-pressed", "true");
+    expect(slotButton("16:00")).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("점유를 가로지르는 둘째 탭 → 확장 무시(선택 불변, D1)", () => {
     // [14 avail, 15 reserved, 16 avail] — 14 앵커 후 16 탭은 15(reserved)에 막혀 무시.
     render(<Harness slots={makeSlots(["available", "reserved", "available"])} />);
@@ -157,31 +176,18 @@ describe("SlotGrid 키보드 대안 (AC2 — 방향키 + Enter 시작/끝)", () 
   });
 });
 
-describe("SlotGrid 드래그 (AC1 — Pointer Events, 인프라 가능 범위)", () => {
-  it("pointerDown→pointerEnter→pointerUp 로 연속 확장한다", () => {
-    render(<Harness slots={makeSlots(["available", "available", "available"])} />);
-
-    fireEvent.pointerDown(slotButton("14:00"), { pointerId: 1 });
-    fireEvent.pointerEnter(slotButton("16:00"), { pointerId: 1 }); // 14→16 연속 확장
-    fireEvent.pointerUp(slotButton("16:00"), { pointerId: 1 });
-
-    expect(slotButton("14:00")).toHaveAttribute("aria-pressed", "true");
-    expect(slotButton("15:00")).toHaveAttribute("aria-pressed", "true");
-    expect(slotButton("16:00")).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("드래그가 점유 슬롯에서 멈춘다(클램프 — 첫 점유 직전까지)", () => {
-    // [14 avail, 15 avail, 16 reserved, 17 avail] — 14 에서 17 로 드래그해도 16 에서 멈춰 14·15 만.
+describe("SlotGrid 탭-확장 점유 클램프 (AC1 — D1)", () => {
+  it("끝 탭이 점유 슬롯 너머면 그 직전까지만 채운다(클램프)", () => {
+    // [14 avail, 15 avail, 16 reserved, 17 avail] — 14 앵커 후 15 끝 탭 → 14·15(16 못 넘음).
     render(
       <Harness slots={makeSlots(["available", "available", "reserved", "available"])} />,
     );
 
-    fireEvent.pointerDown(slotButton("14:00"), { pointerId: 1 });
-    fireEvent.pointerEnter(slotButton("17:00"), { pointerId: 1 }); // 16(reserved) 가로지르기 시도
-    fireEvent.pointerUp(slotButton("17:00"), { pointerId: 1 });
+    fireEvent.click(slotButton("14:00")); // 앵커
+    fireEvent.click(slotButton("15:00")); // 14·15 확장
 
     expect(slotButton("14:00")).toHaveAttribute("aria-pressed", "true");
     expect(slotButton("15:00")).toHaveAttribute("aria-pressed", "true");
-    expect(slotButton("17:00")).toHaveAttribute("aria-pressed", "false"); // 점유 못 넘음.
+    expect(slotButton("17:00")).toHaveAttribute("aria-pressed", "false");
   });
 });

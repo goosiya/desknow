@@ -3,18 +3,23 @@
 // 슬롯 그리드 — 연속 선택 인터랙티브 (Story 4.4 — AC1·AC2·AC4). 3열 그리드(목업 `.slots`).
 //
 // Story 4.3 가 남긴 "4.4 SEAM"(표시 전용 → 선택 상호작용 배선)을 채운다. `available` 슬롯을
-// `<span>` → `<button>` 으로 승격하고 **탭·드래그·키보드**로 연속 구간을 선택한다. 선택 구간은
-// `primary` 로 강조하고, **비연속·점유 가로지르기는 구조적으로 막는다**(D1). `selection` 은
-// controlled prop(상태 출처 = `ReservationPanel`) — 본 컴포넌트는 상호작용만 담당한다.
+// `<span>` → `<button>` 으로 승격하고 **탭·키보드**로 연속 구간을 선택한다(모바일 SlotGrid 와
+// 동일한 탭-확장 모델 — 시작 슬롯 탭 → 끝 슬롯 탭 → 사이 구간 자동 채움). 선택 구간은 `primary`
+// 로 강조하고, **비연속·점유 가로지르기는 구조적으로 막는다**(D1). `selection` 은 controlled
+// prop(상태 출처 = `ReservationPanel`) — 본 컴포넌트는 상호작용만 담당한다.
 //
+// ⚠️ 드래그 미구현(범위 결정 #3 — 모바일 동형): PointerEvent + setPointerCapture 방식은 실제
+//    브라우저에서 캡처 탓에 형제 슬롯 onPointerEnter 가 안 와 깨지고, pointerdown 이 매번
+//    anchorRef 를 덮어써 **탭-확장(시작→끝)** 까지 망가뜨렸다(jsdom 은 둘 다 no-op 이라 테스트가
+//    못 잡음). 그래서 탭/키보드만 남긴다 — 클릭은 onClick → selectAt 단일 경로.
 // ⚠️ 연속-가용 단일 규칙(slots.ts `clampContiguousAvailable`): 앵커에서 인접 `available` 로만
 //    구간이 자라고 첫 점유에서 멈춘다 → 비연속/점유 가로지르기 불가(D1 + 구간 점유 차단 동시 충족).
-//    - 탭/Enter: 점유를 가로지르면 **무시**(앵커 유지). 드래그: 첫 점유에서 **클램프**(멈춤).
+//    탭/Enter 가 점유를 가로지르면 **무시**(앵커 유지 — expandOrIgnore).
 // ⚠️ 색 단독 금지(DESIGN L193·L273): 선택은 `aria-pressed`(스크린리더)+`primary` 토큰(시각) 병행.
 //    비활성 슬롯은 취소선(시각)+sr-only(스크린리더)+범례로 신호한다. 색 hex 직접 작성 금지 —
 //    Tailwind 토큰 클래스만. ≥44×44px 터치 타깃(EXPERIENCE L166 — `tap-target`/`h-12`).
 //    SR 구간 피드백("14시부터 17시까지 선택됨")은 `ReservationPanel` 의 선택 요약(aria-live)이 담당.
-import { useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { useRef, type KeyboardEvent } from "react";
 
 import type { RoomSlot } from "@/lib/api-client";
 
@@ -52,11 +57,8 @@ const ARROW_DELTAS: Record<string, number> = {
 };
 
 export function SlotGrid({ slots, date, selection, onSelect }: SlotGridProps) {
-  // 앵커 = 구간 확장의 기준점(마지막 단일 선택/드래그 시작 인덱스). 렌더 상태 아님(ref).
+  // 앵커 = 구간 확장의 기준점(마지막 단일 선택 인덱스). 렌더 상태 아님(ref).
   const anchorRef = useRef<number | null>(null);
-  // 드래그 진행 여부 + 실제 이동 발생 여부(드래그 직후 따라오는 click 을 무시하기 위함).
-  const draggingRef = useRef(false);
-  const draggedRef = useRef(false);
   // 로빙 탭인덱스 + 방향키 동기 포커스용 버튼 DOM 참조(Calendar dayRefs 패턴 미러).
   const slotRefs = useRef(new Map<number, HTMLButtonElement>());
 
@@ -80,6 +82,7 @@ export function SlotGrid({ slots, date, selection, onSelect }: SlotGridProps) {
   }
 
   // 탭/Enter 공통 선택 로직: 없으면 1칸(앵커) · 단일 재선택이면 해제 · 아니면 앵커~대상 확장.
+  // 시작 슬롯 탭 → 끝 슬롯 탭 → 사이 구간 자동 채움(모바일 selectAt 와 동일).
   function selectAt(i: number) {
     if (selection === null) {
       anchorRef.current = i;
@@ -94,35 +97,6 @@ export function SlotGrid({ slots, date, selection, onSelect }: SlotGridProps) {
     const anchor = anchorRef.current ?? selection.startIndex;
     const next = expandOrIgnore(anchor, i);
     if (next) onSelect(next); // 점유 가로지르면 null → 무시(앵커 유지).
-  }
-
-  function handleClick(i: number) {
-    if (draggedRef.current) {
-      draggedRef.current = false; // 드래그가 이미 선택을 확정 — 뒤따르는 click 무시.
-      return;
-    }
-    selectAt(i);
-  }
-
-  function handlePointerDown(event: PointerEvent<HTMLButtonElement>, i: number) {
-    anchorRef.current = i;
-    draggingRef.current = true;
-    draggedRef.current = false;
-    // 포인터 캡처 — 드래그가 슬롯 밖으로 나가도 up 을 받는다(jsdom 은 no-op 폴리필).
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  }
-
-  function handlePointerEnter(i: number) {
-    if (!draggingRef.current || anchorRef.current === null) return;
-    draggedRef.current = true;
-    // 드래그 = 첫 점유에서 클램프(멈춤). 점유 슬롯엔 핸들러가 없어 enter 가 안 와도 마지막
-    // available 에서 자연히 멈춘다.
-    const next = clampContiguousAvailable(slots, anchorRef.current, i);
-    if (next) onSelect(next);
-  }
-
-  function endDrag() {
-    draggingRef.current = false;
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, i: number) {
@@ -168,15 +142,10 @@ export function SlotGrid({ slots, date, selection, onSelect }: SlotGridProps) {
                   if (el) slotRefs.current.set(index, el);
                   else slotRefs.current.delete(index);
                 }}
-                onClick={() => handleClick(index)}
-                onPointerDown={(event) => handlePointerDown(event, index)}
-                onPointerEnter={() => handlePointerEnter(index)}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
+                onClick={() => selectAt(index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
                 className={cn(
-                  // touch-none/select-none — 드래그 중 스크롤·텍스트 선택 방지.
-                  "tap-target flex h-12 touch-none select-none items-center justify-center rounded-md border text-sm font-semibold",
+                  "tap-target flex h-12 select-none items-center justify-center rounded-md border text-sm font-semibold",
                   selected
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground",
